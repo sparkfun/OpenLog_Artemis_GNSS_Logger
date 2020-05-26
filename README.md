@@ -1,14 +1,16 @@
-SparkFun OpenLog Artemis
+SparkFun OpenLog Artemis : GNSS Logger
 ===========================================================
 
 [![SparkFun OpenLog Artemis](https://cdn.sparkfun.com//assets/parts/1/4/4/8/0/15846-OpenLog_Artemis-01.jpg)](https://www.sparkfun.com/products/15846)
 
 [*SparkFun OpenLog Artemis (SPX-15846)*](https://www.sparkfun.com/products/15846)
 
-The OpenLog Artemis is an open source datalogger the comes preprogrammed to automatically log IMU, GPS, serial data, and various pressure, humidity, and distance sensors. All without writing a single line of code! OLA automatically detects, configures, and logs Qwiic sensors. OLA is designed for users who just need to capture a bunch of data to a CSV and get back to their larger project.
+The OpenLog Artemis is an open source datalogger that comes preprogrammed to automatically log IMU, GPS, serial data, and various pressure, humidity, and distance sensors. All without writing a single line of code! OLA automatically detects, configures, and logs Qwiic sensors. OLA is designed for users who just need to capture a bunch of data to SD and get back to their larger project.
 
-This version of the firmware is dedicated to logging data from the latest u-blox GNSS modules. Data is logged to SD card in u-blox's UBX format without being processed. The files can be analyzed with
-(e.g.) [u-center](https://www.u-blox.com/en/product/u-center) or RTKLIB. You will find everything you need to know about exploring precision GPS/GNSS with RTKLIB over at https://rtklibexplorer.wordpress.com/
+The firmware in this repo is dedicated to logging data from the latest u-blox GNSS modules. You can find the main OpenLog Artemis repo [here](https://github.com/sparkfun/OpenLog_Artemis).
+
+Data is logged to SD card in u-blox's UBX format without being processed. The files can be analyzed with (e.g.) [u-center](https://www.u-blox.com/en/product/u-center) or RTKLIB.
+You will find everything you need to know about exploring precision GPS/GNSS with RTKLIB over at [rtklibexplorer.wordpress.com](https://rtklibexplorer.wordpress.com/).
 
 OpenLog Artemis is highly configurable over an easy to use serial interface. Simply plug in a USB C cable and open a terminal at 115200kbps. The logging output is automatically streamed to both the terminal and the microSD. Pressing any key will open the configuration menu.
 
@@ -19,7 +21,7 @@ The OpenLog Artemis automatically scans, detects, configures, and logs various Q
 * [NEO-M9N](https://www.sparkfun.com/products/15712)
 * More boards are being added all the time!
 
-_Please note: the M8 family of GNSS modules are not currently supported by this version of the firmware. You can of course use the standard [OpenLog Artemis firmware](https://github.com/sparkfun/OpenLog_Artemis) if you want to log data from those._
+_Please note: the M8 family of GNSS modules are not supported by this version of the firmware. You can of course use the standard [OpenLog Artemis firmware](https://github.com/sparkfun/OpenLog_Artemis) if you want to log data from those._
 
 The menus will let you configure:
 
@@ -43,7 +45,7 @@ The menus will let you configure:
 * Logging and sleep durations. Want to log RAWX data for 10 minutes once per day? You can absolutely do that!
 * Power management. You can choose to put the GNSS module to sleep or disconnect its power completely between logging sessions.
 
-New features are constantly being added so we’ve released an easy to use firmware upgrade tool. No need to install Arduino or a bunch of libraries, simply open the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI), load the latest OLA firmware, and add features to OpenLog Artemis as the come out!
+New features are constantly being added so we’ve released an easy to use firmware upgrade tool. No need to install Arduino or a bunch of libraries, simply open the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI), load the latest OLA firmware, and add features to OpenLog Artemis as they come out!
 
 Repository Contents
 -------------------
