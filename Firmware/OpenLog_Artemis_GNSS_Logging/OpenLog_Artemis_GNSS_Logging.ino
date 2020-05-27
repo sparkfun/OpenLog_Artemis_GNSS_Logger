@@ -20,7 +20,7 @@
   If you want the logger to log continuously, set the sleep duration to zero.
   If you want the logger to open a new log file after sleeping, use menu 1 option 8.
 
-  You can configure the GNSS module and which messages it produces using menu 2 sub-menu 1.
+  You can configure the GNSS module and which messages it produces using menu 2.
   You can disable GNSS logging using option 1.
   There are two ways to power down the GNSS module while the OLA is asleep:
   a power management task, or switch off the Qwiic power.
