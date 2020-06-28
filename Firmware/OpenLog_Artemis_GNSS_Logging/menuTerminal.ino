@@ -103,7 +103,7 @@ void menuLogRate()
     }
     else if (incoming == '6')
     {
-      uint64_t secsBetweenReads = settings.usBetweenReadings / 1000000UL;
+      uint64_t secsBetweenReads = settings.usBetweenReadings / 1000000ULL;
       if (secsBetweenReads < 5) secsBetweenReads = 5; //Let's be sensible about this. The module will take ~2 secs to do a hot start anyway.
       Serial.printf("How many seconds would you like to log for? (%d to 6,000,000,000):", secsBetweenReads);
       uint64_t tempSeconds = getNumber(menuTimeout); //Timeout after x seconds
