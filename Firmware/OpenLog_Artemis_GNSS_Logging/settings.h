@@ -62,6 +62,8 @@ struct struct_settings {
   bool printMinorDebugMessages = false;
   bool powerDownQwiicBusBetweenReads = false;
   int qwiicBusMaxSpeed = 400000;
+  bool wakeOnPowerReconnect = true;
+  bool enablePwrLedDuringSleep = true;
   struct_uBlox sensor_uBlox;
 } settings;
 

@@ -1,11 +1,15 @@
+//Low Power Interrupt Service Routine
+void lowPowerISR()
+{
+  lowPowerSeen = true; // Set flag  
+}
+
 //Power down the entire system but maintain running of RTC
 //This function takes 100us to run including GPIO setting
 //This puts the Apollo3 into 2.36uA to 2.6uA consumption mode
 //With leakage across the 3.3V protection diode, it's approx 3.00uA.
 void powerDown()
 {
-  //digitalWrite(LOGIC_DEBUG, HIGH);
-
   detachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS)); //Prevent voltage supervisor from waking us from sleep
 
   //Close file before going to sleep
@@ -36,15 +40,34 @@ void powerDown()
   am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_UART0);
   am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_UART1);
 
-  //Disable all pads
-  for (int x = 0 ; x < 50 ; x++)
-    am_hal_gpio_pinconfig(x, g_AM_HAL_GPIO_DISABLE);
+  //Disable pads
+  for (int x = 0; x < 50; x++)
+  {
+    if ((x != ap3_gpio_pin2pad(PIN_POWER_LOSS)) &&
+      //(x != ap3_gpio_pin2pad(PIN_LOGIC_DEBUG)) &&
+      (x != ap3_gpio_pin2pad(PIN_MICROSD_POWER)) &&
+      (x != ap3_gpio_pin2pad(PIN_QWIIC_POWER)) &&
+      (x != ap3_gpio_pin2pad(PIN_IMU_POWER)))
+    {
+      am_hal_gpio_pinconfig(x, g_AM_HAL_GPIO_DISABLE);
+    }
+  }
+
+  //powerLEDOff();
+  
+  //Make sure PIN_POWER_LOSS is configured as an input for the WDT
+  pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
 
   //We can't leave these power control pins floating
+#if(HARDWARE_VERSION_MAJOR >= 1)
   qwiicPowerOff();
+#endif
   imuPowerOff();
   microSDPowerOff();
 
+  //Flag that we are ready for reset by the WDT
+  waitingForReset = true;
+  
   //Power down Flash, SRAM, cache
   am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_CACHE); //Turn off CACHE
   am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_FLASH_512K); //Turn off everything but lower 512k
@@ -55,17 +78,33 @@ void powerDown()
   am_hal_stimer_config(AM_HAL_STIMER_CFG_CLEAR | AM_HAL_STIMER_CFG_FREEZE);
   am_hal_stimer_config(AM_HAL_STIMER_XTAL_32KHZ);
 
-  //digitalWrite(LOGIC_DEBUG, LOW);
-
-  am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP); //Sleep forever
+  while (1) // Stay in deep sleep until we get reset (by the user or WDT)
+  {
+    am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP); //Sleep
+  }
 }
 
 //Power everything down and wait for interrupt wakeup
 void goToSleep()
 {
-  uint32_t msToSleep = settings.usSleepDuration / 1000;
-  uint32_t sysTicksToSleep = msToSleep * 32768L / 1000; //Counter/Timer 6 will use the 32kHz clock
+  uint32_t msToSleep = (uint32_t)(settings.usBetweenReadings / 1000ULL);
 
+  //Counter/Timer 6 will use the 32kHz clock
+  //Calculate how many 32768Hz system ticks we need to sleep for:
+  //sysTicksToSleep = msToSleep * 32768L / 1000
+  //We need to be careful with the multiply as we will overflow uint32_t if msToSleep is > 131072
+  uint32_t sysTicksToSleep;
+  if (msToSleep < 131000)
+  {
+    sysTicksToSleep = msToSleep * 32768L; // Do the multiply first for short intervals
+    sysTicksToSleep = sysTicksToSleep / 1000L; // Now do the divide
+  }
+  else
+  {
+    sysTicksToSleep = msToSleep / 1000L; // Do the division first for long intervals (to avoid an overflow)
+    sysTicksToSleep = sysTicksToSleep * 32768L; // Now do the multiply
+  }
+  
   detachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS)); //Prevent voltage supervisor from waking us from sleep
 
   if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
@@ -127,9 +166,21 @@ void goToSleep()
   am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_UART0);
   am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_UART1);
 
-  //Disable all pads
-  for (int x = 0 ; x < 50 ; x++)
-    am_hal_gpio_pinconfig(x, g_AM_HAL_GPIO_DISABLE);
+  //Disable pads
+  for (int x = 0; x < 50; x++)
+  {
+    if ((x != ap3_gpio_pin2pad(PIN_POWER_LOSS)) &&
+      //(x != ap3_gpio_pin2pad(PIN_LOGIC_DEBUG)) &&
+      (x != ap3_gpio_pin2pad(PIN_MICROSD_POWER)) &&
+      (x != ap3_gpio_pin2pad(PIN_QWIIC_POWER)) &&
+      (x != ap3_gpio_pin2pad(PIN_IMU_POWER)))
+    {
+      am_hal_gpio_pinconfig(x, g_AM_HAL_GPIO_DISABLE);
+    }
+  }
+
+  //Make sure PIN_POWER_LOSS is configured as an input for the WDT
+  pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
 
   //We can't leave these power control pins floating
   imuPowerOff();
@@ -147,6 +198,12 @@ void goToSleep()
   else
     qwiicPowerOn(); //Make sure pins stays as output
 
+  //Leave the power LED on if the user desires it
+  if (settings.enablePwrLedDuringSleep == true)
+    powerLEDOn();
+  //else
+  //  powerLEDOff();
+
   //Power down Flash, SRAM, cache
   am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_CACHE); //Turn off CACHE
   am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_FLASH_512K); //Turn off everything but lower 512k
@@ -159,7 +216,7 @@ void goToSleep()
 
   //Adjust sysTicks down by the amount we've be at 48MHz
   uint32_t msBeenAwake = millis();
-  uint32_t sysTicksAwake = msBeenAwake * 32768L / 1000; //Convert to 32kHz systicks
+  uint32_t sysTicksAwake = msBeenAwake * 32768L / 1000L; //Convert to 32kHz systicks
   sysTicksToSleep -= sysTicksAwake;
 
   //Setup interrupt to trigger when the number of ms have elapsed
@@ -173,8 +230,14 @@ void goToSleep()
   //Enable the timer interrupt in the NVIC.
   NVIC_EnableIRQ(STIMER_CMPR6_IRQn);
 
-  //Go to Deep Sleep.
+  //Halt the WDT otherwise this will bring us out of deep sleep
+  am_hal_wdt_halt();
+
+  //Deep Sleep
   am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
+
+  //(Re)start the WDT
+  am_hal_wdt_start();
 
   //Turn off interrupt
   NVIC_DisableIRQ(STIMER_CMPR6_IRQn);
@@ -203,11 +266,25 @@ void wakeFromSleep()
   //Run setup again
 
   //If 3.3V rail drops below 3V, system will enter low power mode and maintain RTC
-  pinMode(PIN_POWER_LOSS, INPUT);
-  attachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS), powerDown, FALLING);
+  pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
+
+  delay(1); // Let PIN_POWER_LOSS stabilize
+
+  attachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS), lowPowerISR, FALLING);
+
+  if (digitalRead(PIN_POWER_LOSS) == LOW) powerDown(); //Check PIN_POWER_LOSS just in case we missed the falling edge
+  if (lowPowerSeen == true) powerDown(); //Power down if required
 
   pinMode(PIN_STAT_LED, OUTPUT);
   digitalWrite(PIN_STAT_LED, LOW);
+
+  powerLEDOn();
+
+  if (PIN_LOGIC_DEBUG >= 0)
+  {
+    pinMode(PIN_LOGIC_DEBUG, OUTPUT); //Debug pin
+    digitalWrite(PIN_LOGIC_DEBUG, HIGH); //Make this high, trigger debug on falling edge
+  }
 
   Serial.begin(settings.serialTerminalBaudRate);
 
@@ -215,9 +292,15 @@ void wakeFromSleep()
 
   beginSD(); //285 - 293ms
 
+  if (lowPowerSeen == true) powerDown(); //Power down if required
+
   beginQwiic();
 
+  if (lowPowerSeen == true) powerDown(); //Power down if required
+
   beginDataLogging(); //180ms
+
+  if (lowPowerSeen == true) powerDown(); //Power down if required
 
   disableIMU(); //Disable IMU
 
@@ -235,12 +318,24 @@ void wakeFromSleep()
 void qwiicPowerOn()
 {
   pinMode(PIN_QWIIC_POWER, OUTPUT);
+#if(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 4)
   digitalWrite(PIN_QWIIC_POWER, LOW);
+#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 5)
+  digitalWrite(PIN_QWIIC_POWER, HIGH);
+#elif(HARDWARE_VERSION_MAJOR == 1 && HARDWARE_VERSION_MINOR == 0)
+  digitalWrite(PIN_QWIIC_POWER, HIGH);
+#endif
 }
 void qwiicPowerOff()
 {
   pinMode(PIN_QWIIC_POWER, OUTPUT);
+#if(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 4)
   digitalWrite(PIN_QWIIC_POWER, HIGH);
+#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 5)
+  digitalWrite(PIN_QWIIC_POWER, LOW);
+#elif(HARDWARE_VERSION_MAJOR == 1 && HARDWARE_VERSION_MINOR == 0)
+  digitalWrite(PIN_QWIIC_POWER, LOW);
+#endif
 }
 
 void microSDPowerOn()
@@ -265,21 +360,36 @@ void imuPowerOff()
   digitalWrite(PIN_IMU_POWER, LOW);
 }
 
+void powerLEDOn()
+{
+#if(HARDWARE_VERSION_MAJOR >= 1)
+  pinMode(PIN_PWR_LED, OUTPUT);
+  digitalWrite(PIN_PWR_LED, HIGH); // Turn the Power LED on  
+#endif  
+}
+void powerLEDOff()
+{
+#if(HARDWARE_VERSION_MAJOR >= 1)
+  pinMode(PIN_PWR_LED, OUTPUT);
+  digitalWrite(PIN_PWR_LED, LOW); // Turn the Power LED off
+#endif  
+}
+
 //Returns the number of milliseconds according to the RTC
 //(In increments of 10ms)
 //Watch out for the year roll-over!
 uint64_t rtcMillis()
 {
-    myRTC.getTime();
-    uint64_t millisToday = 0;
-    int dayOfYear = calculateDayOfYear(myRTC.dayOfMonth, myRTC.month, myRTC.year + 2000);
-    millisToday += ((uint64_t)dayOfYear * 86400000ULL);
-    millisToday += ((uint64_t)myRTC.hour * 3600000ULL);
-    millisToday += ((uint64_t)myRTC.minute * 60000ULL);
-    millisToday += ((uint64_t)myRTC.seconds * 1000ULL);
-    millisToday += ((uint64_t)myRTC.hundredths * 10ULL);
+  myRTC.getTime();
+  uint64_t millisToday = 0;
+  int dayOfYear = calculateDayOfYear(myRTC.dayOfMonth, myRTC.month, myRTC.year + 2000);
+  millisToday += ((uint64_t)dayOfYear * 86400000ULL);
+  millisToday += ((uint64_t)myRTC.hour * 3600000ULL);
+  millisToday += ((uint64_t)myRTC.minute * 60000ULL);
+  millisToday += ((uint64_t)myRTC.seconds * 1000ULL);
+  millisToday += ((uint64_t)myRTC.hundredths * 10ULL);
 
-    return(millisToday);  
+  return(millisToday);  
 }
 
 //Returns the day of year

@@ -7,7 +7,7 @@ SparkFun OpenLog Artemis : GNSS Logger
 
 The OpenLog Artemis is an open source datalogger that comes preprogrammed to automatically log IMU, GPS, serial data, and various pressure, humidity, and distance sensors. All without writing a single line of code! OLA automatically detects, configures, and logs Qwiic sensors. OLA is designed for users who just need to capture a bunch of data to SD and get back to their larger project.
 
-The firmware in this repo is dedicated to logging data from the latest u-blox GNSS modules. You can find the main OpenLog Artemis repo [here](https://github.com/sparkfun/OpenLog_Artemis).
+The firmware in this repo is dedicated to logging data from the latest u-blox GNSS modules. [You can find the main OpenLog Artemis repo here](https://github.com/sparkfun/OpenLog_Artemis).
 
 Data is logged to SD card in u-blox's UBX format without being processed. The files can be analyzed with (e.g.) [u-center](https://www.u-blox.com/en/product/u-center) or RTKLIB.
 You will find everything you need to know about exploring precision GPS/GNSS with RTKLIB over at [rtklibexplorer.wordpress.com](https://rtklibexplorer.wordpress.com/).
@@ -45,17 +45,18 @@ The menus will let you configure:
 * Logging and sleep durations. Want to log RAWX data for 10 minutes once per day? You can absolutely do that!
 * Power management. You can choose to put the GNSS module to sleep or disconnect its power completely between logging sessions.
 
-New features are constantly being added so we’ve released an easy to use firmware upgrade tool. No need to install Arduino or a bunch of libraries, simply open the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI), load the latest OLA firmware, and add features to OpenLog Artemis as they come out!
+New features are constantly being added so we’ve released an easy to use firmware upgrade tool. No need to install Arduino or a bunch of libraries, simply open the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI), load the latest OLA firmware, and add features to OpenLog Artemis as they come out! Full instructions are available in [UPGRADE.md](UPGRADE.md).
 
 Repository Contents
 -------------------
 
+* **/Binaries** - The binary files for the different versions of the OLA firmware
 * **/Firmware** - The main sketch that runs on the OpenLog Artemis.
 
 Documentation
 --------------
 
-* **[Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI)** - Used to upgrade the firmware on OLA
+* **[UPGRADE.md](UPGRADE.md)** - contains full instructions on how to upgrade the firmware on the OLA using the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI)
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - OLA includes a large number of libraries that will need to be installed before compiling will work.
 * **Hookup Guide** - Coming soon!
 

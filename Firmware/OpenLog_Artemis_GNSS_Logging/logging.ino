@@ -18,6 +18,8 @@ char* findNextAvailableLog(int &newFileNumber, const char *fileLeader)
   static char newFileName[40];
   while (1)
   {
+    if (lowPowerSeen == true) powerDown(); //Power down if required
+    
     sprintf(newFileName, "%s%05u.ubx", fileLeader, newFileNumber); //Splice the new file number into this file name
 
 //    if (settings.printMinorDebugMessages == true)
@@ -29,8 +31,11 @@ char* findNextAvailableLog(int &newFileNumber, const char *fileLeader)
     if (sd.exists(newFileName) == false) break; //File name not found so we will use it.
 
     //File exists so open and see if it is empty. If so, use it.
-    //newFile = sd.open(newFileName, O_READ);
+#ifdef USE_EXFAT
     newFile.open(newFileName, O_READ); //exFat
+#else
+    newFile = sd.open(newFileName, O_READ);
+#endif
     if (newFile.size() == 0) break; // File is empty so we will use it.
 
     newFile.close(); // Close this existing file we just opened.

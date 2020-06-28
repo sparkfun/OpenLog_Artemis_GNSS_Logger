@@ -20,6 +20,8 @@ void menuMain()
 
     Serial.println(F("3) Configure Qwiic Bus"));
 
+    Serial.println(F("4) Configure Power Options"));
+
     if (settings.logData && online.microSD && online.dataLogging)
     {
       Serial.println(F("f) Open New Log File"));
@@ -32,7 +34,7 @@ void menuMain()
 
     Serial.println(F("r) Reset all OLA settings to default"));
 
-    Serial.println(F("d) Debug Menu"));
+    //Serial.println(F("d) Debug Menu"));
 
     Serial.println(F("x) Return to logging"));
 
@@ -44,6 +46,8 @@ void menuMain()
       menuConfigure_uBlox();
     else if (incoming == '3')
       menuConfigure_QwiicBus();
+    else if (incoming == '4')
+      menuPower();
     else if (incoming == 'f')
       openNewLogFile();
     else if (incoming == 'g')
@@ -109,20 +113,19 @@ void menuConfigure_QwiicBus()
     Serial.println();
     Serial.println(F("Menu: Configure Qwiic Bus"));
 
-    Serial.print(F("1) Turn off bus power when sleeping : "));
+    Serial.print(F("1) Set Max Qwiic Bus Speed          : "));
+    Serial.println(settings.qwiicBusMaxSpeed);
+#if(HARDWARE_VERSION_MAJOR >= 1)
+    Serial.print(F("2) Turn off bus power when sleeping : "));
     if (settings.powerDownQwiicBusBetweenReads == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
-
-    Serial.print(F("2) Set Max Qwiic Bus Speed          : "));
-    Serial.println(settings.qwiicBusMaxSpeed);
+#endif
 
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
-      settings.powerDownQwiicBusBetweenReads ^= 1;
-    else if (incoming == '2')
     {
       Serial.print(F("Enter max frequency to run Qwiic bus: (100000 to 400000): "));
       int amt = getNumber(menuTimeout);
@@ -131,6 +134,10 @@ void menuConfigure_QwiicBus()
       else
         Serial.println(F("Error: Out of range"));
     }
+#if(HARDWARE_VERSION_MAJOR >= 1)
+    else if (incoming == '2')
+      settings.powerDownQwiicBusBetweenReads ^= 1;
+#endif
     else if (incoming == 'x')
       break;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)

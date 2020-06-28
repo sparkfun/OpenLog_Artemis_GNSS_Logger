@@ -31,10 +31,15 @@ void printUnknown(int unknownValue)
 //Blocking wait for user input
 void waitForInput()
 {
-  delay(5); //Wait for any incoming chars to hit buffer (let's keep this short!)
+  for (int i = 0; i < 5; i++) //Wait for any incoming chars to hit buffer (let's keep this short!)
+  {
+    if (lowPowerSeen == true) powerDown(); //Power down if required
+    delay(1);
+  }
   while (Serial.available() > 0) Serial.read(); //Clear buffer
   while (Serial.available() == 0)
   {
+    if (lowPowerSeen == true) powerDown(); //Power down if required
     storeData(); //Keep reading I2C data and writing it to SD
   }
 }
@@ -49,7 +54,11 @@ uint8_t getByteChoice(int numberOfSeconds)
   settings.enableTerminalOutput = false; //Disable terminal messages while waiting for a choice
   
   Serial.flush();
-  delay(5); //Wait for any incoming chars to hit buffer (let's keep this short!)
+  for (int i = 0; i < 5; i++) //Wait for any incoming chars to hit buffer (let's keep this short!)
+  {
+    if (lowPowerSeen == true) powerDown(); //Power down if required
+    delay(1);
+  }
   while (Serial.available() > 0) Serial.read(); //Clear buffer
 
   long startTime = millis();
@@ -75,6 +84,7 @@ uint8_t getByteChoice(int numberOfSeconds)
 
     storeData(); //Keep reading I2C data and writing it to SD
 
+    if (lowPowerSeen == true) powerDown(); //Power down if required
     delay(1);
   }
 
@@ -90,7 +100,11 @@ int64_t getNumber(int numberOfSeconds)
   bool termOut = settings.enableTerminalOutput; //Store settings.enableTerminalOutput
   settings.enableTerminalOutput = false; //Disable terminal messages while waiting for a number
   
-  delay(5); //Wait for any incoming chars to hit buffer (let's keep this short!)
+  for (int i = 0; i < 5; i++) //Wait for any incoming chars to hit buffer (let's keep this short!)
+  {
+    if (lowPowerSeen == true) powerDown(); //Power down if required
+    delay(1);
+  }
   while (Serial.available() > 0) Serial.read(); //Clear buffer
 
   //Get input from user
@@ -116,6 +130,8 @@ int64_t getNumber(int numberOfSeconds)
         }
       }
 
+      if (lowPowerSeen == true) powerDown(); //Power down if required
+      
       storeData(); //Keep reading I2C data and writing it to SD
     }
 
@@ -133,7 +149,7 @@ int64_t getNumber(int numberOfSeconds)
       break;
     }
 
-    if (isDigit(incoming) == true)
+    if ((isDigit(incoming) == true) || ((incoming == '-') && (spot == 0))) // Check for digits and a minus sign
     {
       Serial.write(incoming); //Echo user's typing
       cleansed[spot++] = (char)incoming;
@@ -146,13 +162,24 @@ int64_t getNumber(int numberOfSeconds)
     }
   }
 
+  if (lowPowerSeen == true) powerDown(); //Power down if required
+
   cleansed[spot] = '\0';
 
-  uint64_t largeNumber = 0;
-  for(int x = 0 ; x < spot ; x++)
+  int64_t largeNumber = 0;
+  int x = 0;
+  if (cleansed[0] == '-') // If our number is negative
+  {
+    x = 1; // Skip the minus
+  }
+  for( ; x < spot ; x++)
   {
     largeNumber *= 10;
     largeNumber += (cleansed[x] - '0');
+  }
+  if (cleansed[0] == '-') // If our number is negative
+  {
+    largeNumber = 0 - largeNumber; // Make it negative
   }
 
   settings.enableTerminalOutput = termOut; //Restore settings.enableTerminalOutput

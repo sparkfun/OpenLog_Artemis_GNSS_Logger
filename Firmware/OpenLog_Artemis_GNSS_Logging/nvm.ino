@@ -36,6 +36,10 @@ void recordSettings()
   settings.sizeOfSettings = sizeof(settings);
   EEPROM.put(0, settings);
   recordSettingsToFile();
+
+  // Update volatile copies of settings (e.g. wakeOnPowerReconnect)
+  // Putting this here means it covers loadSettings too
+  wakeOnPowerReconnect = settings.wakeOnPowerReconnect;
 }
 
 //Export the current settings to a config file
@@ -46,8 +50,11 @@ void recordSettingsToFile()
     if (sd.exists("OLA_GNSS_settings.cfg"))
       sd.remove("OLA_GNSS_settings.cfg");
 
-    //File settingsFile; //FAT16/32
+#ifdef USE_EXFAT
     FsFile settingsFile; //exFat
+#else
+    File settingsFile; //FAT16/32
+#endif
     if (settingsFile.open("OLA_GNSS_settings.cfg", O_CREAT | O_APPEND | O_WRITE) == false)
     {
       Serial.println("Failed to create settings file");
@@ -58,10 +65,84 @@ void recordSettingsToFile()
     settingsFile.println("nextSerialLogNumber=" + (String)settings.nextSerialLogNumber);
     settingsFile.println("nextDataLogNumber=" + (String)settings.nextDataLogNumber);
 
-    char temp[20];
-    sprintf(temp, "%lu", settings.usBetweenReadings);
-    settingsFile.println("usBetweenReadings=" + (String)temp);
+    // Convert uint64_t to string
+    // Based on printLLNumber by robtillaart
+    // https://forum.arduino.cc/index.php?topic=143584.msg1519824#msg1519824
+    char tempTimeRev[20]; // Char array to hold to usBetweenReadings (reversed order)
+    char tempTime[20]; // Char array to hold to usBetweenReadings (correct order)
+    uint64_t usBR = settings.usBetweenReadings;
+    unsigned int i = 0;
+    if (usBR == 0ULL) // if usBetweenReadings is zero, set tempTime to "0"
+    {
+      tempTime[0] = '0';
+      tempTime[1] = 0;
+    }
+    else
+    {
+      while (usBR > 0)
+      {
+        tempTimeRev[i++] = (usBR % 10) + '0'; // divide by 10, convert the remainder to char
+        usBR /= 10; // divide by 10
+      }
+      unsigned int j = 0;
+      while (i > 0)
+      {
+        tempTime[j++] = tempTimeRev[--i]; // reverse the order
+        tempTime[j] = 0; // mark the end with a NULL
+      }
+    }
+    
+    settingsFile.println("usBetweenReadings=" + (String)tempTime);
 
+    usBR = settings.usLoggingDuration;
+    i = 0;
+    if (usBR == 0ULL) // if usLoggingDuration is zero, set tempTime to "0"
+    {
+      tempTime[0] = '0';
+      tempTime[1] = 0;
+    }
+    else
+    {
+      while (usBR > 0)
+      {
+        tempTimeRev[i++] = (usBR % 10) + '0'; // divide by 10, convert the remainder to char
+        usBR /= 10; // divide by 10
+      }
+      unsigned int j = 0;
+      while (i > 0)
+      {
+        tempTime[j++] = tempTimeRev[--i]; // reverse the order
+        tempTime[j] = 0; // mark the end with a NULL
+      }
+    }
+    
+    settingsFile.println("usLoggingDuration=" + (String)tempTime);
+
+    usBR = settings.usSleepDuration;
+    i = 0;
+    if (usBR == 0ULL) // if usSleepDuration is zero, set tempTime to "0"
+    {
+      tempTime[0] = '0';
+      tempTime[1] = 0;
+    }
+    else
+    {
+      while (usBR > 0)
+      {
+        tempTimeRev[i++] = (usBR % 10) + '0'; // divide by 10, convert the remainder to char
+        usBR /= 10; // divide by 10
+      }
+      unsigned int j = 0;
+      while (i > 0)
+      {
+        tempTime[j++] = tempTimeRev[--i]; // reverse the order
+        tempTime[j] = 0; // mark the end with a NULL
+      }
+    }
+    
+    settingsFile.println("usSleepDuration=" + (String)tempTime);
+
+    settingsFile.println("openNewLogFile=" + (String)settings.openNewLogFile);
     settingsFile.println("enableSD=" + (String)settings.enableSD);
     settingsFile.println("enableTerminalOutput=" + (String)settings.enableTerminalOutput);
     settingsFile.println("logData=" + (String)settings.logData);
@@ -71,6 +152,8 @@ void recordSettingsToFile()
     settingsFile.println("printMinorDebugMessages=" + (String)settings.printMinorDebugMessages);
     settingsFile.println("powerDownQwiicBusBetweenReads=" + (String)settings.powerDownQwiicBusBetweenReads);
     settingsFile.println("qwiicBusMaxSpeed=" + (String)settings.qwiicBusMaxSpeed);
+    settingsFile.println("wakeOnPowerReconnect=" + (String)settings.wakeOnPowerReconnect);
+    settingsFile.println("enablePwrLedDuringSleep=" + (String)settings.enablePwrLedDuringSleep);
 
     settingsFile.close();
   }
@@ -86,8 +169,11 @@ bool loadSettingsFromFile()
   {
     if (sd.exists("OLA_GNSS_settings.cfg"))
     {
-      //File settingsFile; //FAT16/32
+#ifdef USE_EXFAT
       FsFile settingsFile; //exFat
+#else
+      File settingsFile; //FAT16/32
+#endif
       if (settingsFile.open("OLA_GNSS_settings.cfg", O_READ) == false)
       {
         Serial.println("Failed to open settings file");
@@ -201,6 +287,12 @@ bool parseLine(char* str) {
     settings.nextDataLogNumber = d;
   else if (strcmp(settingName, "usBetweenReadings") == 0)
     settings.usBetweenReadings = d;
+  else if (strcmp(settingName, "usLoggingDuration") == 0)
+    settings.usLoggingDuration = d;
+  else if (strcmp(settingName, "usSleepDuration") == 0)
+    settings.usSleepDuration = d;
+  else if (strcmp(settingName, "openNewLogFile") == 0)
+    settings.openNewLogFile = d;
   else if (strcmp(settingName, "enableSD") == 0)
     settings.enableSD = d;
   else if (strcmp(settingName, "enableTerminalOutput") == 0)
@@ -219,6 +311,10 @@ bool parseLine(char* str) {
     settings.powerDownQwiicBusBetweenReads = d;
   else if (strcmp(settingName, "qwiicBusMaxSpeed") == 0)
     settings.qwiicBusMaxSpeed = d;
+  else if (strcmp(settingName, "wakeOnPowerReconnect") == 0)
+    settings.wakeOnPowerReconnect = d;
+  else if (strcmp(settingName, "enablePwrLedDuringSleep") == 0)
+    settings.enablePwrLedDuringSleep = d;
   else
   {
     Serial.print("Unknown setting: ");

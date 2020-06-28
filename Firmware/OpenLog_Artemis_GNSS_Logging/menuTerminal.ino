@@ -18,34 +18,36 @@ void menuLogRate()
     Serial.println(F(" bps"));
 
     Serial.print(F("4) Set Log Rate in Hz                                     : "));
-    if (settings.usBetweenReadings < 1000000UL) //Take more than one measurement per second
+    if (settings.usBetweenReadings < 1000000ULL) //Take more than one measurement per second
     {
       //Display Integer Hertz
-      int logRate = 1000000UL / settings.usBetweenReadings;
+      int logRate = (int)(1000000ULL / settings.usBetweenReadings);
       Serial.printf("%d\n", logRate);
     }
     else
     {
       //Display fractional Hertz
-      uint32_t logRateSeconds = settings.usBetweenReadings / 1000000UL;
+      uint32_t logRateSeconds = (uint32_t)(settings.usBetweenReadings / 1000000ULL);
       Serial.printf("%.06lf\n", 1.0 / logRateSeconds);
     }
 
     Serial.print(F("5) Set Log Rate in seconds between readings               : "));
-    if (settings.usBetweenReadings > 1000000UL) //Take more than one measurement per second
+    if (settings.usBetweenReadings > 1000000ULL) //Take more than one measurement per second
     {
-      Serial.printf("%llu\n", settings.usBetweenReadings / 1000000UL);
+        uint32_t interval = (uint32_t)(settings.usBetweenReadings / 1000000ULL);
+        Serial.printf("%d\n", interval);
     }
     else
     {
-      Serial.printf("%.03lf\n", settings.usBetweenReadings / 1000000.0);
+        float rate = (float)(settings.usBetweenReadings / 1000000.0);
+        Serial.printf("%.06f\n", rate);
     }
     
     Serial.print(F("6) Set logging duration in seconds                        : "));
-    Serial.printf("%llu\n", settings.usLoggingDuration / 1000000UL);
+    Serial.printf("%llu\n", settings.usLoggingDuration / 1000000ULL);
 
     Serial.print(F("7) Set sleep duration in seconds (0 = continuous logging) : "));
-    Serial.printf("%llu\n", settings.usSleepDuration / 1000000UL);
+    Serial.printf("%llu\n", settings.usSleepDuration / 1000000ULL);
 
     Serial.print(F("8) Open new log file after sleep                          : "));
     if (settings.openNewLogFile == true) Serial.println(F("Yes"));
@@ -91,13 +93,13 @@ void menuLogRate()
     }
     else if (incoming == '5')
     {
-      Serial.println(F("How many seconds between readings? (1 to 6,000,000,000):"));
+      Serial.println(F("How many seconds between readings? (1 to 129,600):"));
       uint64_t tempSeconds = getNumber(menuTimeout); //Timeout after x seconds
-      if (tempSeconds < 1 || tempSeconds > 6000000000ULL)
+      if (tempSeconds < 1 || tempSeconds > 129600ULL)
         Serial.println(F("Error: Readings Per Second out of range"));
       else
         //settings.recordPerSecond = tempRPS;
-        settings.usBetweenReadings = 1000000UL * tempSeconds;
+        settings.usBetweenReadings = 1000000ULL * tempSeconds;
 
       qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
     }
@@ -105,21 +107,24 @@ void menuLogRate()
     {
       uint64_t secsBetweenReads = settings.usBetweenReadings / 1000000ULL;
       if (secsBetweenReads < 5) secsBetweenReads = 5; //Let's be sensible about this. The module will take ~2 secs to do a hot start anyway.
-      Serial.printf("How many seconds would you like to log for? (%d to 6,000,000,000):", secsBetweenReads);
+      Serial.printf("How many seconds would you like to log for? (%d to 129,600):", secsBetweenReads);
       uint64_t tempSeconds = getNumber(menuTimeout); //Timeout after x seconds
-      if ((tempSeconds < secsBetweenReads) || tempSeconds > 6000000000ULL)
+      if ((tempSeconds < secsBetweenReads) || tempSeconds > 129600ULL)
         Serial.println(F("Error: Logging Duration out of range"));
       else
-        settings.usLoggingDuration = 1000000UL * tempSeconds;
+        settings.usLoggingDuration = 1000000ULL * tempSeconds;
     }
     else if (incoming == '7')
     {
-      Serial.println(F("How many seconds would you like to sleep for after logging? (0  or  10 to 6,000,000,000):"));
+      //The Deep Sleep duration is set with am_hal_stimer_compare_delta_set, the duration of which is uint32_t
+      //So the maximum we can sleep for is 2^32 / 32768 = 131072 seconds = 36.4 hours
+      //Let's limit this to 36 hours = 129600 seconds
+      Serial.println(F("How many seconds would you like to sleep for after logging? (0  or  10 to 129,600):"));
       uint64_t tempSeconds = getNumber(menuTimeout); //Timeout after x seconds
-      if (((tempSeconds > 0) && (tempSeconds < 10)) || tempSeconds > 6000000000ULL)
+      if (((tempSeconds > 0) && (tempSeconds < 10)) || tempSeconds > 129600ULL)
         Serial.println(F("Error: Sleep Duration out of range"));
       else
-        settings.usSleepDuration = 1000000UL * tempSeconds;
+        settings.usSleepDuration = 1000000ULL * tempSeconds;
     }
     else if (incoming == '8')
       settings.openNewLogFile ^= 1;
