@@ -47,7 +47,6 @@ struct struct_uBlox {
 //This is all the settings that can be set on OpenLog. It's recorded to NVM and the config file.
 struct struct_settings {
   int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry
-  int nextSerialLogNumber = 1;
   int nextDataLogNumber = 1;
   uint64_t usBetweenReadings = 1000000ULL; //1000,000us = 1000ms = 1 readings per second.
   uint64_t usLoggingDuration = 10000000ULL; //10,000,000us = 10s logging duration

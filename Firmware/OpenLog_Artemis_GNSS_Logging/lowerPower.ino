@@ -59,7 +59,7 @@ void powerDown()
   pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
 
   //We can't leave these power control pins floating
-#if(HARDWARE_VERSION_MAJOR >= 1)
+#if(HARDWARE_VERSION_MAJOR >= 1) // Don't disable power on the X04 - it will cause a brown-out!
   qwiicPowerOff();
 #endif
   imuPowerOff();
@@ -87,7 +87,7 @@ void powerDown()
 //Power everything down and wait for interrupt wakeup
 void goToSleep()
 {
-  uint32_t msToSleep = (uint32_t)(settings.usBetweenReadings / 1000ULL);
+  uint32_t msToSleep = (uint32_t)(settings.usSleepDuration / 1000ULL);
 
   //Counter/Timer 6 will use the 32kHz clock
   //Calculate how many 32768Hz system ticks we need to sleep for:

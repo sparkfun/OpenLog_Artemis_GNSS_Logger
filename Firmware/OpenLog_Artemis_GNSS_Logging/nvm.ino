@@ -62,7 +62,6 @@ void recordSettingsToFile()
     }
 
     settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
-    settingsFile.println("nextSerialLogNumber=" + (String)settings.nextSerialLogNumber);
     settingsFile.println("nextDataLogNumber=" + (String)settings.nextDataLogNumber);
 
     // Convert uint64_t to string
@@ -281,8 +280,6 @@ bool parseLine(char* str) {
       Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\n", d, sizeof(settings));
 
   }
-  else if (strcmp(settingName, "nextSerialLogNumber") == 0)
-    settings.nextSerialLogNumber = d;
   else if (strcmp(settingName, "nextDataLogNumber") == 0)
     settings.nextDataLogNumber = d;
   else if (strcmp(settingName, "usBetweenReadings") == 0)

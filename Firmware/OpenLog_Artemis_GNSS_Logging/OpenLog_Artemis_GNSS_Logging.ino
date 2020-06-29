@@ -315,7 +315,7 @@ void loop() {
   uint64_t timeNow = rtcMillis();
 
   // Is sleep enabled and is it time to go to sleep?
-  if ((settings.usSleepDuration > 0) && (timeNow > (measurementStartTime + (settings.usLoggingDuration / 1000))))
+  if ((settings.usSleepDuration > 0) && (timeNow > (measurementStartTime + (settings.usLoggingDuration / 1000ULL))))
   {
     if (settings.printMajorDebugMessages == true)
     {
@@ -325,7 +325,7 @@ void loop() {
     goToSleep();
 
     //Update measurementStartTime so we know when to go back to sleep
-    measurementStartTime = measurementStartTime + (settings.usLoggingDuration / 1000) + (settings.usSleepDuration / 1000);
+    measurementStartTime = measurementStartTime + (settings.usLoggingDuration / 1000ULL) + (settings.usSleepDuration / 1000ULL);
     
     rtcNeedsSync = true; //Let's re-sync the RTC after sleep
   }
