@@ -20,18 +20,21 @@ bool beginSensors()
       // Try up to three times to get the module info
       if (getModuleInfo(1100) == false) // Try to get the module info
       {
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         if (settings.printMajorDebugMessages == true)
         {
           Serial.println(F("beginSensors: first getModuleInfo call failed. Trying again...")); 
         }       
         if (getModuleInfo(1100) == false) // Try to get the module info
         {
+          if (lowPowerSeen == true) powerDown(); //Power down if required
           if (settings.printMajorDebugMessages == true)
           {
             Serial.println(F("beginSensors: second getModuleInfo call failed. Trying again...")); 
           }       
           if (getModuleInfo(1100) == false) // Try to get the module info
           {
+            if (lowPowerSeen == true) powerDown(); //Power down if required
             if (settings.printMajorDebugMessages == true)
             {
               Serial.println(F("beginSensors: third getModuleInfo call failed! Giving up..."));
@@ -69,6 +72,8 @@ bool beginSensors()
         Serial.println(minfo.mod);
       }
 
+      if (lowPowerSeen == true) powerDown(); //Power down if required
+
       //Check the PROTVER is >= 27
       if (minfo.protVerMajor < 27)
       {
@@ -88,6 +93,7 @@ bool beginSensors()
         gpsSensor_ublox.addCfgValset8(0x10720004, 0); // CFG-I2COUTPROT-RTCM3X : Disable RTCM3 output on the I2C port (Precision modules only)
       }
       uint8_t success = gpsSensor_ublox.sendCfgValset8(0x20920001, 0, 2100); // CFG-INFMSG-UBX_I2C : Disable UBX INFo messages on the I2C port (maxWait 2100ms)
+      if (lowPowerSeen == true) powerDown(); //Power down if required
       if (success == 0)
       {
         if (settings.printMajorDebugMessages == true)
@@ -105,11 +111,14 @@ bool beginSensors()
 
       //Disable all messages in RAM (maxWait 2100)
       disableMessages(2100);
+      
+      if (lowPowerSeen == true) powerDown(); //Power down if required
 
       //Disable USB port if required
       if (settings.sensor_uBlox.enableUSB == false)
       {
         success = gpsSensor_ublox.setVal8(0x10650001, 0, VAL_LAYER_RAM, 1100); // CFG-USB-ENABLED (in RAM only)
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         if (success == 0)
         {
           if (settings.printMajorDebugMessages == true)
@@ -130,6 +139,7 @@ bool beginSensors()
       if (settings.sensor_uBlox.enableUART1 == false)
       {
         success = gpsSensor_ublox.setVal8(0x10520005, 0, VAL_LAYER_RAM, 1100); // CFG-UART1-ENABLED (in RAM only)
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         if (success == 0)
         {
           if (settings.printMajorDebugMessages == true)
@@ -150,6 +160,7 @@ bool beginSensors()
       if (settings.sensor_uBlox.enableUART2 == false)
       {
         success = gpsSensor_ublox.setVal8(0x10530005, 0, VAL_LAYER_RAM, 1100); // CFG-UART2-ENABLED (in RAM only)
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         if (success == 0)
         {
           if (settings.printMajorDebugMessages == true)
@@ -170,6 +181,7 @@ bool beginSensors()
       if (settings.sensor_uBlox.enableSPI == false)
       {
         success = gpsSensor_ublox.setVal8(0x10640006, 0, VAL_LAYER_RAM, 1100); // CFG-SPI-ENABLED (in RAM only)
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         if (success == 0)
         {
           if (settings.printMajorDebugMessages == true)
@@ -246,6 +258,7 @@ bool beginSensors()
         gpsSensor_ublox.addCfgValset8(0x10310022, 0); // CFG-SIGNAL-BDS_ENA : Disable BeiDou
         gpsSensor_ublox.addCfgValset8(0x10310024, 0); // CFG-SIGNAL-QZSS_ENA : Disable QZSS
         success = gpsSensor_ublox.sendCfgValset8(0x10310025, 0, 2100); // CFG-SIGNAL-GLO_ENA : Disable GLONASS (maxWait 2100ms)
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         if (success == 0)
         {
           if (settings.printMajorDebugMessages == true)
@@ -267,6 +280,7 @@ bool beginSensors()
         gpsSensor_ublox.addCfgValset8(0x10310022, 1); // CFG-SIGNAL-BDS_ENA : Enable BeiDou
         gpsSensor_ublox.addCfgValset8(0x10310024, 1); // CFG-SIGNAL-QZSS_ENA : Enable QZSS
         success = gpsSensor_ublox.sendCfgValset8(0x10310025, 1, 2100); // CFG-SIGNAL-GLO_ENA : Enable GLONASS (maxWait 2100ms)
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         if (success == 0)
         {
           if (settings.printMajorDebugMessages == true)
@@ -286,6 +300,7 @@ bool beginSensors()
       //Set output rate
       gpsSensor_ublox.newCfgValset16(0x30210001, measRate, VAL_LAYER_RAM); // CFG-RATE-MEAS : Configure measurement period (in RAM only)
       success = gpsSensor_ublox.sendCfgValset16(0x30210002, 1, 2100); // CFG-RATE-NAV : 1 measurement per navigation solution (maxWait 2100ms)
+      if (lowPowerSeen == true) powerDown(); //Power down if required
       if (success == 0)
       {
         if (settings.printMajorDebugMessages == true)
@@ -303,6 +318,8 @@ bool beginSensors()
 
       //Enable the selected messages in RAM (MaxWait 2100)
       enableMessages(2100);
+
+      if (lowPowerSeen == true) powerDown(); //Power down if required
 
       qwiicOnline.uBlox = true;
     }
@@ -360,6 +377,7 @@ void openNewLogFile()
       unsigned long pauseUntil = millis() + 2100UL; //Wait > 500ms so we can be sure SD data is sync'd
       while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
       {
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
       }
 
@@ -372,6 +390,8 @@ void openNewLogFile()
       updateDataFileAccess(); //Update the file access time stamp
 
       gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
+
+      if (lowPowerSeen == true) powerDown(); //Power down if required
 
       strcpy(gnssDataFileName, findNextAvailableLog(settings.nextDataLogNumber, "dataLog"));
 
@@ -389,6 +409,8 @@ void openNewLogFile()
         return;
       }
 
+      if (lowPowerSeen == true) powerDown(); //Power down if required
+
       if (rtcHasBeenSyncd == true) //Update the create time if the RTC is valid
       {
         myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
@@ -400,6 +422,8 @@ void openNewLogFile()
           Serial.println(result);
         }
       }
+
+      if (lowPowerSeen == true) powerDown(); //Power down if required
 
       //(Re)Enable the selected messages in RAM (MaxWait 2100)
       enableMessages(2100);
@@ -422,6 +446,7 @@ void resetGNSS()
       unsigned long pauseUntil = millis() + 2100UL; //Wait >> 500ms so we can be sure SD data is sync'd
       while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
       {
+        if (lowPowerSeen == true) powerDown(); //Power down if required
         storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
       }
 
@@ -431,26 +456,52 @@ void resetGNSS()
       Serial.println(gnssDataFileName);
       gnssDataFile.sync();
 
+      if (lowPowerSeen == true) powerDown(); //Power down if required
+
       updateDataFileAccess(); //Update the file access time stamp
+
+      if (lowPowerSeen == true) powerDown(); //Power down if required
 
       gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
 
       //Reset the GNSS
       //Note: this method is DEPRECATED. TO DO: replace this with UBX-CFG-VALDEL ?
       gpsSensor_ublox.factoryDefault(2100);
+      if (lowPowerSeen == true) powerDown(); //Power down if required
       gpsSensor_ublox.factoryReset();
+      if (lowPowerSeen == true) powerDown(); //Power down if required
 
       //Wait 5 secs
       Serial.print(F("GNSS has been reset. Waiting 5 seconds."));
-      delay(1000);
+      for (int i = 0; i < 1000; i++)
+      {
+        if (lowPowerSeen == true) powerDown(); //Power down if required
+        delay(1);
+      }
       Serial.print(F("."));
-      delay(1000);
+      for (int i = 0; i < 1000; i++)
+      {
+        if (lowPowerSeen == true) powerDown(); //Power down if required
+        delay(1);
+      }
       Serial.print(F("."));
-      delay(1000);
+      for (int i = 0; i < 1000; i++)
+      {
+        if (lowPowerSeen == true) powerDown(); //Power down if required
+        delay(1);
+      }
       Serial.print(F("."));
-      delay(1000);
+      for (int i = 0; i < 1000; i++)
+      {
+        if (lowPowerSeen == true) powerDown(); //Power down if required
+        delay(1);
+      }
       Serial.print(F("."));
-      delay(1000);
+      for (int i = 0; i < 1000; i++)
+      {
+        if (lowPowerSeen == true) powerDown(); //Power down if required
+        delay(1);
+      }
       Serial.println(F("."));
     }
   }
@@ -475,6 +526,7 @@ uint8_t disableMessages(uint16_t maxWait)
   success &= gpsSensor_ublox.addCfgValset8(0x209102a4, 0); // CFG-MSGOUT-UBX_RXM_RAWX_I2C
   success &= gpsSensor_ublox.addCfgValset8(0x20910231, 0); // CFG-MSGOUT-UBX_RXM_SFRBX_I2C
   success &= gpsSensor_ublox.sendCfgValset8(0x20910178, 0, maxWait); // CFG-MSGOUT-UBX_TIM_TM2_I2C
+  if (lowPowerSeen == true) powerDown(); //Power down if required
   if (success > 0)
   {
     if (settings.printMinorDebugMessages == true)
@@ -517,6 +569,7 @@ uint8_t enableMessages(uint16_t maxWait)
     success &= gpsSensor_ublox.addCfgValset8(0x209102a4, settings.sensor_uBlox.logUBXRXMRAWX); // CFG-MSGOUT-UBX_RXM_RAWX_I2C
   }
   success &= gpsSensor_ublox.sendCfgValset8(0x20910178, settings.sensor_uBlox.logUBXTIMTM2, maxWait); // CFG-MSGOUT-UBX_TIM_TM2_I2C
+  if (lowPowerSeen == true) powerDown(); //Power down if required
   if (success > 0)
   {
   if (settings.printMinorDebugMessages == true)
