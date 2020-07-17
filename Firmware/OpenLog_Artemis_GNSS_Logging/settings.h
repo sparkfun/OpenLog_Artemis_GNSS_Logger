@@ -46,7 +46,8 @@ struct struct_uBlox {
 
 //This is all the settings that can be set on OpenLog. It's recorded to NVM and the config file.
 struct struct_settings {
-  int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry
+  int sizeOfSettings = 0; //sizeOfSettings **must** be the first entry and must be int
+  int olaIdentifier = OLA_IDENTIFIER; // olaIdentifier **must** be the second entry
   int nextDataLogNumber = 1;
   uint64_t usBetweenReadings = 1000000ULL; //1000,000us = 1000ms = 1 readings per second.
   uint64_t usLoggingDuration = 10000000ULL; //10,000,000us = 10s logging duration
@@ -61,7 +62,6 @@ struct struct_settings {
   bool printMinorDebugMessages = false;
   bool powerDownQwiicBusBetweenReads = false;
   int qwiicBusMaxSpeed = 400000;
-  bool wakeOnPowerReconnect = true;
   bool enablePwrLedDuringSleep = true;
   struct_uBlox sensor_uBlox;
 } settings;

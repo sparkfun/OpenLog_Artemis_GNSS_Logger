@@ -88,8 +88,9 @@ void menuLogRate()
         Serial.println(F("Error: Readings Per Second out of range"));
       else
         settings.usBetweenReadings = 1000000UL / tempRPS;
-        
-      qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
+
+      gnssSettingsChanged = true; //Mark gnss settings as changed so it will be started with new settings
+      //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
     }
     else if (incoming == '5')
     {
@@ -101,7 +102,8 @@ void menuLogRate()
         //settings.recordPerSecond = tempRPS;
         settings.usBetweenReadings = 1000000ULL * tempSeconds;
 
-      qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
+      gnssSettingsChanged = true; //Mark gnss settings as changed so it will be started with new settings
+      //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
     }
     else if (incoming == '6')
     {

@@ -34,6 +34,8 @@ void menuMain()
 
     Serial.println(F("r) Reset all OLA settings to default"));
 
+    Serial.println("q) Quit: Close log files and power down");
+
     //Serial.println(F("d) Debug Menu"));
 
     Serial.println(F("x) Return to logging"));
@@ -57,7 +59,9 @@ void menuMain()
       if (gContinue == 'y')
       {
         resetGNSS();
-        Serial.println(F("GNSS reset. Please reset OpenLog Artemis and open a terminal at 115200bps..."));
+        Serial.print(F("GNSS reset. Please reset OpenLog Artemis and open a terminal at "));
+        Serial.print((String)settings.serialTerminalBaudRate);
+        Serial.println(F("bps..."));
         while (1);
       }
       else
@@ -75,11 +79,29 @@ void menuMain()
         if (sd.exists("OLA_GNSS_settings.cfg"))
           sd.remove("OLA_GNSS_settings.cfg");
 
-        Serial.println(F("Settings erased. Please reset OpenLog Artemis and open a terminal at 115200bps..."));
+        Serial.print(F("Settings erased. Please reset OpenLog Artemis and open a terminal at "));
+        Serial.print((String)settings.serialTerminalBaudRate);
+        Serial.println(F("bps..."));
         while (1);
       }
       else
         Serial.println(F("Reset aborted"));
+    }
+    else if (incoming == 'q')
+    {
+      Serial.println("\n\rQuit? Press 'y' to confirm:");
+      byte bContinue = getByteChoice(menuTimeout);
+      if (bContinue == 'y')
+      {
+        closeLogFile();
+        Serial.print(F("Log files are closed. Please reset OpenLog Artemis and open a terminal at "));
+        Serial.print((String)settings.serialTerminalBaudRate);
+        Serial.println(F("bps..."));
+        delay(sdPowerDownDelay); // Give the SD card time to shut down
+        powerDown();
+      }
+      else
+        Serial.println(F("Quit aborted"));
     }
     else if (incoming == 'x')
       break;
@@ -115,7 +137,7 @@ void menuConfigure_QwiicBus()
 
     Serial.print(F("1) Set Max Qwiic Bus Speed          : "));
     Serial.println(settings.qwiicBusMaxSpeed);
-#if(HARDWARE_VERSION_MAJOR >= 1)
+#if(HARDWARE_VERSION_MAJOR >= 1) || (HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
     Serial.print(F("2) Turn off bus power when sleeping : "));
     if (settings.powerDownQwiicBusBetweenReads == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
@@ -134,7 +156,7 @@ void menuConfigure_QwiicBus()
       else
         Serial.println(F("Error: Out of range"));
     }
-#if(HARDWARE_VERSION_MAJOR >= 1)
+#if(HARDWARE_VERSION_MAJOR >= 1) || (HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
     else if (incoming == '2')
       settings.powerDownQwiicBusBetweenReads ^= 1;
 #endif

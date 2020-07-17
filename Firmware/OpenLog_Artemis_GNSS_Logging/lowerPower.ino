@@ -1,9 +1,3 @@
-//Low Power Interrupt Service Routine
-void lowPowerISR()
-{
-  lowPowerSeen = true; // Set flag  
-}
-
 //Power down the entire system but maintain running of RTC
 //This function takes 100us to run including GPIO setting
 //This puts the Apollo3 into 2.36uA to 2.6uA consumption mode
@@ -59,15 +53,19 @@ void powerDown()
   pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
 
   //We can't leave these power control pins floating
-#if(HARDWARE_VERSION_MAJOR >= 1) // Don't disable power on the X04 - it will cause a brown-out!
-  qwiicPowerOff();
-#endif
   imuPowerOff();
   microSDPowerOff();
 
-  //Flag that we are ready for reset by the WDT
-  waitingForReset = true;
-  
+  //Keep Qwiic bus powered on if user desires it - but only for X04 to avoid a brown-out
+#if(HARDWARE_VERSION_MAJOR == 0)
+  if (settings.powerDownQwiicBusBetweenReads == true)
+    qwiicPowerOff();
+  else
+    qwiicPowerOn(); //Make sure pins stays as output
+#else
+  qwiicPowerOff();
+#endif
+
   //Power down Flash, SRAM, cache
   am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_CACHE); //Turn off CACHE
   am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_FLASH_512K); //Turn off everything but lower 512k
@@ -78,7 +76,7 @@ void powerDown()
   am_hal_stimer_config(AM_HAL_STIMER_CFG_CLEAR | AM_HAL_STIMER_CFG_FREEZE);
   am_hal_stimer_config(AM_HAL_STIMER_XTAL_32KHZ);
 
-  while (1) // Stay in deep sleep until we get reset (by the user or WDT)
+  while (1) // Stay in deep sleep until we get reset
   {
     am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP); //Sleep
   }
@@ -130,6 +128,8 @@ void goToSleep()
     updateDataFileAccess(); //Update the file access time stamp
 
     gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
+
+    delay(sdPowerDownDelay); // Give the SD card time to finish writing ***** THIS IS CRITICAL *****
   }
 
   //Check if we are using a power management task to put the module to sleep
@@ -270,10 +270,9 @@ void wakeFromSleep()
 
   delay(1); // Let PIN_POWER_LOSS stabilize
 
-  attachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS), lowPowerISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS), powerDown, FALLING);
 
   if (digitalRead(PIN_POWER_LOSS) == LOW) powerDown(); //Check PIN_POWER_LOSS just in case we missed the falling edge
-  if (lowPowerSeen == true) powerDown(); //Power down if required
 
   pinMode(PIN_STAT_LED, OUTPUT);
   digitalWrite(PIN_STAT_LED, LOW);
@@ -292,15 +291,10 @@ void wakeFromSleep()
 
   beginSD(); //285 - 293ms
 
-  if (lowPowerSeen == true) powerDown(); //Power down if required
-
   beginQwiic();
-
-  if (lowPowerSeen == true) powerDown(); //Power down if required
+  delay(250); // Allow extra time for the qwiic sensors to power up
 
   beginDataLogging(); //180ms
-
-  if (lowPowerSeen == true) powerDown(); //Power down if required
 
   disableIMU(); //Disable IMU
 
@@ -321,6 +315,8 @@ void qwiicPowerOn()
 #if(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 4)
   digitalWrite(PIN_QWIIC_POWER, LOW);
 #elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 5)
+  digitalWrite(PIN_QWIIC_POWER, LOW);
+#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
   digitalWrite(PIN_QWIIC_POWER, HIGH);
 #elif(HARDWARE_VERSION_MAJOR == 1 && HARDWARE_VERSION_MINOR == 0)
   digitalWrite(PIN_QWIIC_POWER, HIGH);
@@ -332,6 +328,8 @@ void qwiicPowerOff()
 #if(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 4)
   digitalWrite(PIN_QWIIC_POWER, HIGH);
 #elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 5)
+  digitalWrite(PIN_QWIIC_POWER, HIGH);
+#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
   digitalWrite(PIN_QWIIC_POWER, LOW);
 #elif(HARDWARE_VERSION_MAJOR == 1 && HARDWARE_VERSION_MINOR == 0)
   digitalWrite(PIN_QWIIC_POWER, LOW);

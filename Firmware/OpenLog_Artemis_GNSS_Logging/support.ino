@@ -33,13 +33,11 @@ void waitForInput()
 {
   for (int i = 0; i < 5; i++) //Wait for any incoming chars to hit buffer (let's keep this short!)
   {
-    if (lowPowerSeen == true) powerDown(); //Power down if required
     delay(1);
   }
   while (Serial.available() > 0) Serial.read(); //Clear buffer
   while (Serial.available() == 0)
   {
-    if (lowPowerSeen == true) powerDown(); //Power down if required
     storeData(); //Keep reading I2C data and writing it to SD
   }
 }
@@ -56,7 +54,6 @@ uint8_t getByteChoice(int numberOfSeconds)
   Serial.flush();
   for (int i = 0; i < 5; i++) //Wait for any incoming chars to hit buffer (let's keep this short!)
   {
-    if (lowPowerSeen == true) powerDown(); //Power down if required
     delay(1);
   }
   while (Serial.available() > 0) Serial.read(); //Clear buffer
@@ -84,7 +81,6 @@ uint8_t getByteChoice(int numberOfSeconds)
 
     storeData(); //Keep reading I2C data and writing it to SD
 
-    if (lowPowerSeen == true) powerDown(); //Power down if required
     delay(1);
   }
 
@@ -102,7 +98,6 @@ int64_t getNumber(int numberOfSeconds)
   
   for (int i = 0; i < 5; i++) //Wait for any incoming chars to hit buffer (let's keep this short!)
   {
-    if (lowPowerSeen == true) powerDown(); //Power down if required
     delay(1);
   }
   while (Serial.available() > 0) Serial.read(); //Clear buffer
@@ -130,8 +125,6 @@ int64_t getNumber(int numberOfSeconds)
         }
       }
 
-      if (lowPowerSeen == true) powerDown(); //Power down if required
-      
       storeData(); //Keep reading I2C data and writing it to SD
     }
 
@@ -161,8 +154,6 @@ int64_t getNumber(int numberOfSeconds)
       return (STATUS_PRESSED_X);
     }
   }
-
-  if (lowPowerSeen == true) powerDown(); //Power down if required
 
   cleansed[spot] = '\0';
 
