@@ -1,7 +1,7 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: July 17th, 2020
+  Date: July 18th, 2020
   Version: V1.1
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX

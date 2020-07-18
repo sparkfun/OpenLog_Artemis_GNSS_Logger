@@ -53,7 +53,7 @@ void menuLogRate()
     if (settings.openNewLogFile == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
 
-    Serial.print(F("9) Use pin 32 to Stop Logging:                            : "));
+    Serial.print(F("9) Use pin 32 to Stop Logging                             : "));
     if (settings.useGPIO32ForStopLogging == true) Serial.println("Yes");
     else Serial.println("No");
 
