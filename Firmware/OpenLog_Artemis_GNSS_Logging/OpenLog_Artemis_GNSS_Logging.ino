@@ -123,6 +123,7 @@ const byte PIN_QWIIC_POWER = 18;
 const byte PIN_STAT_LED = 19;
 const byte PIN_IMU_INT = 37;
 const byte PIN_IMU_CHIP_SELECT = 44;
+const byte PIN_STOP_LOGGING = 32;
 
 enum returnStatus {
   STATUS_GETBYTE_TIMEOUT = 255,
@@ -193,6 +194,7 @@ const byte menuTimeout = 15; //Menus will exit/timeout after this number of seco
 bool rtcHasBeenSyncd = false; //Flag to indicate if the RTC been sync'd to GNSS
 bool rtcNeedsSync = true; //Flag to indicate if the RTC needs to be sync'd (after sleep)
 bool gnssSettingsChanged = false; //Flag to indicate if the gnss settings have been changed
+volatile static bool stopLoggingSeen = false; //Flag to indicate if we should stop logging
 
 struct minfoStructure // Structure to hold the GNSS module info
 {
@@ -255,6 +257,15 @@ void setup() {
   Serial.begin(settings.serialTerminalBaudRate);
   Serial.printf("Artemis OpenLog GNSS v%d.%d\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
 
+  if (settings.useGPIO32ForStopLogging == true)
+  {
+    Serial.println("Stop Logging is enabled. Pull GPIO pin 32 to GND to stop logging.");
+    pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
+    delay(1); // Let the pin stabilize
+    attachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING), stopLoggingISR, FALLING); // Enable the interrupt
+    stopLoggingSeen = false; // Make sure the flag is clear
+  }
+
   beginQwiic();
   delay(250); // Allow extra time for the qwiic sensors to power up
 
@@ -291,6 +302,11 @@ void loop() {
   if (Serial.available()) menuMain(); //Present user menu
 
   storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+
+  if ((settings.useGPIO32ForStopLogging == true) && (stopLoggingSeen == true)) // Has the user pressed the stop logging button?
+  {
+    stopLogging();
+  }
 
   uint64_t timeNow = rtcMillis();
 
@@ -486,4 +502,10 @@ extern "C" void am_stimer_cmpr6_isr(void)
   {
     am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREG);
   }
+}
+
+//Stop Logging ISR
+void stopLoggingISR(void)
+{
+  stopLoggingSeen = true;
 }

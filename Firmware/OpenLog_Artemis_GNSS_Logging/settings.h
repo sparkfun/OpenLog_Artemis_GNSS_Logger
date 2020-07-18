@@ -56,13 +56,14 @@ struct struct_settings {
   bool enableSD = true;
   bool enableTerminalOutput = true;
   bool logData = true;
-  int serialTerminalBaudRate = 115200;
+  int  serialTerminalBaudRate = 115200;
   bool showHelperText = true;
   bool printMajorDebugMessages = false;
   bool printMinorDebugMessages = false;
-  bool powerDownQwiicBusBetweenReads = false;
-  int qwiicBusMaxSpeed = 400000;
+  bool powerDownQwiicBusBetweenReads = false; // 29 chars!
+  int  qwiicBusMaxSpeed = 400000;
   bool enablePwrLedDuringSleep = true;
+  bool useGPIO32ForStopLogging = false; //If true, use GPIO as a stop logging button
   struct_uBlox sensor_uBlox;
 } settings;
 

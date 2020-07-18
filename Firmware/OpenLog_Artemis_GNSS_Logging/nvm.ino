@@ -35,8 +35,10 @@ void loadSettings()
   //Read current settings
   EEPROM.get(0, settings);
 
-  if (loadSettingsFromFile() == true) //Load any settings from config file. This will over-write any pre-existing EEPROM settings.
-    recordSettings(); //Record these new settings to EEPROM and config file to be sure they are the same.
+  loadSettingsFromFile(); //Load any settings from config file. This will over-write any pre-existing EEPROM settings.
+  //Record these new settings to EEPROM and config file to be sure they are the same
+  //(do this even if loadSettingsFromFile returned false)
+  recordSettings();
 }
 
 //Record the current settings struct to EEPROM and then to config file
@@ -154,6 +156,7 @@ void recordSettingsToFile()
     settingsFile.println("powerDownQwiicBusBetweenReads=" + (String)settings.powerDownQwiicBusBetweenReads);
     settingsFile.println("qwiicBusMaxSpeed=" + (String)settings.qwiicBusMaxSpeed);
     settingsFile.println("enablePwrLedDuringSleep=" + (String)settings.enablePwrLedDuringSleep);
+    settingsFile.println("useGPIO32ForStopLogging=" + (String)settings.useGPIO32ForStopLogging);
 
     settingsFile.close();
   }
@@ -176,7 +179,7 @@ bool loadSettingsFromFile()
         return (false);
       }
 
-      char line[50];
+      char line[60];
       int lineNumber = 0;
 
       while (settingsFile.available()) {
@@ -242,7 +245,7 @@ bool parseLine(char* str) {
   if (!str) return false;
 
   //Store this setting name
-  char settingName[30];
+  char settingName[40];
   sprintf(settingName, "%s", str);
 
   //Move pointer to end of line
@@ -309,6 +312,8 @@ bool parseLine(char* str) {
     settings.qwiicBusMaxSpeed = d;
   else if (strcmp(settingName, "enablePwrLedDuringSleep") == 0)
     settings.enablePwrLedDuringSleep = d;
+  else if (strcmp(settingName, "useGPIO32ForStopLogging") == 0)
+    settings.useGPIO32ForStopLogging = d;
   else
   {
     Serial.print("Unknown setting: ");

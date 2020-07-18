@@ -6,6 +6,14 @@ void powerDown()
 {
   detachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS)); //Prevent voltage supervisor from waking us from sleep
 
+  //Prevent stop logging button from waking us from sleep
+  if (settings.useGPIO32ForStopLogging == true)
+  {
+    detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
+    pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
+  }
+
+  //WE NEED TO POWER DOWN ASAP - we don't have time to close the SD files
   //Close file before going to sleep
   //  if (online.dataLogging == true)
   //  {
@@ -105,6 +113,13 @@ void goToSleep()
   
   detachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS)); //Prevent voltage supervisor from waking us from sleep
 
+  //Prevent stop logging button from waking us from sleep
+  if (settings.useGPIO32ForStopLogging == true)
+  {
+    detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
+    pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
+  }
+  
   if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
   {
     //Disable all messages in RAM otherwise they will fill up the module's I2C buffer while we are asleep
@@ -274,6 +289,14 @@ void wakeFromSleep()
 
   if (digitalRead(PIN_POWER_LOSS) == LOW) powerDown(); //Check PIN_POWER_LOSS just in case we missed the falling edge
 
+  if (settings.useGPIO32ForStopLogging == true)
+  {
+    pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
+    delay(1); // Let the pin stabilize
+    attachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING), stopLoggingISR, FALLING); // Enable the interrupt
+    stopLoggingSeen = false; // Make sure the flag is clear
+  }
+
   pinMode(PIN_STAT_LED, OUTPUT);
   digitalWrite(PIN_STAT_LED, LOW);
 
@@ -307,6 +330,41 @@ void wakeFromSleep()
     //Module is still online so (re)enable the selected messages
     enableMessages(2100);
   }
+}
+
+void stopLogging(void)
+{
+  detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
+  
+  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
+  {
+    //Disable all messages in RAM
+    disableMessages(0);
+    //Using a maxWait of zero means we don't wait for the ACK/NACK
+    //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
+  }
+
+  //Save files before going to sleep
+  if (online.dataLogging == true)
+  {
+    unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
+    while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
+    {
+      storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+    }
+
+    gnssDataFile.sync();
+
+    updateDataFileAccess(); //Update the file access time stamp
+
+    gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
+  }
+
+  Serial.print("Logging is stopped. Please reset OpenLog Artemis and open a terminal at ");
+  Serial.print((String)settings.serialTerminalBaudRate);
+  Serial.println("bps...");
+  delay(sdPowerDownDelay); // Give the SD card time to shut down and for the serial message to send
+  powerDown();
 }
 
 void qwiicPowerOn()
