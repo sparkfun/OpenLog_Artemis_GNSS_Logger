@@ -616,7 +616,7 @@ uint8_t powerManagementTask(uint32_t duration, uint16_t maxWait) //Put the modul
 //If certain devices are attached, we need to reduce the I2C max speed
 void determineMaxI2CSpeed()
 {
-  uint32_t maxSpeed = 400000; //Assume 400kHz
+  uint32_t maxSpeed = 400000; //Assume 400kHz - but beware! 400kHz with no pullups can cause issues.
 
   //If user wants to limit the I2C bus speed, do it here
   if (maxSpeed > settings.qwiicBusMaxSpeed)

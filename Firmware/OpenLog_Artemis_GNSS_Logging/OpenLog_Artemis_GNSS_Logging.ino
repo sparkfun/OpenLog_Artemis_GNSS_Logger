@@ -283,6 +283,13 @@ void setup() {
 
   if (settings.enableTerminalOutput == false && settings.logData == true) Serial.println(F("Logging to microSD card with no terminal output"));
 
+  if ((online.microSD == false) || (online.dataLogging == false))
+  {
+    // If we're not using the SD card, everything will have happened much qwicker than usual.
+    // Allow extra time for the u-blox module to start. It seems to need 1sec total.
+    delay(750);
+  }
+
   if (beginSensors() == true) Serial.println(beginSensorOutput); //159 - 865ms but varies based on number of devices attached
   else Serial.println("No sensors detected");
 
