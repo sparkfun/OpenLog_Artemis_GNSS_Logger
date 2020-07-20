@@ -53,6 +53,10 @@ void menuLogRate()
     if (settings.openNewLogFile == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
 
+    Serial.print(F("9) Use pin 32 to Stop Logging                             : "));
+    if (settings.useGPIO32ForStopLogging == true) Serial.println("Yes");
+    else Serial.println("No");
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -88,8 +92,9 @@ void menuLogRate()
         Serial.println(F("Error: Readings Per Second out of range"));
       else
         settings.usBetweenReadings = 1000000UL / tempRPS;
-        
-      qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
+
+      gnssSettingsChanged = true; //Mark gnss settings as changed so it will be started with new settings
+      //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
     }
     else if (incoming == '5')
     {
@@ -101,7 +106,8 @@ void menuLogRate()
         //settings.recordPerSecond = tempRPS;
         settings.usBetweenReadings = 1000000ULL * tempSeconds;
 
-      qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
+      gnssSettingsChanged = true; //Mark gnss settings as changed so it will be started with new settings
+      //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
     }
     else if (incoming == '6')
     {
@@ -128,6 +134,25 @@ void menuLogRate()
     }
     else if (incoming == '8')
       settings.openNewLogFile ^= 1;
+    else if (incoming == '9')
+    {
+      if (settings.useGPIO32ForStopLogging == true)
+      {
+        // Disable stop logging
+        settings.useGPIO32ForStopLogging = false;
+        detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
+        pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
+      }
+      else
+      {
+        // Enable stop logging
+        settings.useGPIO32ForStopLogging = true;
+        pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
+        delay(1); // Let the pin stabilize
+        attachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING), stopLoggingISR, FALLING); // Enable the interrupt
+        stopLoggingSeen = false; // Make sure the flag is clear
+      }
+    }
     else if (incoming == 'x')
       return;
     else if (incoming == STATUS_GETBYTE_TIMEOUT)

@@ -3,7 +3,7 @@
 //Updates EEPROM and then appends to the new log file.
 char* findNextAvailableLog(int &newFileNumber, const char *fileLeader)
 {
-  File newFile; //This will contain the file for SD writing
+  SdFile newFile; //This will contain the file for SD writing
 
   if (newFileNumber < 2) //If the settings have been reset, let's warn the user that this could take a while!
   {
@@ -18,8 +18,6 @@ char* findNextAvailableLog(int &newFileNumber, const char *fileLeader)
   static char newFileName[40];
   while (1)
   {
-    if (lowPowerSeen == true) powerDown(); //Power down if required
-    
     sprintf(newFileName, "%s%05u.ubx", fileLeader, newFileNumber); //Splice the new file number into this file name
 
 //    if (settings.printMinorDebugMessages == true)
@@ -31,12 +29,8 @@ char* findNextAvailableLog(int &newFileNumber, const char *fileLeader)
     if (sd.exists(newFileName) == false) break; //File name not found so we will use it.
 
     //File exists so open and see if it is empty. If so, use it.
-#ifdef USE_EXFAT
-    newFile.open(newFileName, O_READ); //exFat
-#else
-    newFile = sd.open(newFileName, O_READ);
-#endif
-    if (newFile.size() == 0) break; // File is empty so we will use it.
+    newFile.open(newFileName, O_READ);
+    if (newFile.fileSize() == 0) break; // File is empty so we will use it.
 
     newFile.close(); // Close this existing file we just opened.
 

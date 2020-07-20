@@ -207,5 +207,6 @@ void menuConfigure_uBlox()
       printUnknown(incoming);
   }
 
-  qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
+  gnssSettingsChanged = true; //Mark gnss settings as changed so it will be started with new settings
+  //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
 }

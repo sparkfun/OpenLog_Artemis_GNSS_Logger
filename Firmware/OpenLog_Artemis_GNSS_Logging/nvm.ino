@@ -22,12 +22,23 @@ void loadSettings()
     recordSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
   }
 
+  //Check that the olaIdentifier is correct
+  //(It is possible for two different versions of the code to have the same sizeOfSettings - which causes problems!)
+  int tempIdentifier = 0;
+  EEPROM.get(sizeof(int), tempIdentifier); //Load the identifier from the EEPROM location after sizeOfSettings (int)
+  if (tempIdentifier != OLA_IDENTIFIER)
+  {
+    Serial.println("Settings are not valid for this variant of the OLA. Default settings applied");
+    recordSettings(); //Record default settings to EEPROM and config file. At power on, settings are in default state
+  }
+
   //Read current settings
   EEPROM.get(0, settings);
 
-  //Load any settings from config file
-  if (loadSettingsFromFile() == true)
-    recordSettings(); //Record these new settings to EEPROM and config file
+  loadSettingsFromFile(); //Load any settings from config file. This will over-write any pre-existing EEPROM settings.
+  //Record these new settings to EEPROM and config file to be sure they are the same
+  //(do this even if loadSettingsFromFile returned false)
+  recordSettings();
 }
 
 //Record the current settings struct to EEPROM and then to config file
@@ -36,10 +47,6 @@ void recordSettings()
   settings.sizeOfSettings = sizeof(settings);
   EEPROM.put(0, settings);
   recordSettingsToFile();
-
-  // Update volatile copies of settings (e.g. wakeOnPowerReconnect)
-  // Putting this here means it covers loadSettings too
-  wakeOnPowerReconnect = settings.wakeOnPowerReconnect;
 }
 
 //Export the current settings to a config file
@@ -50,11 +57,7 @@ void recordSettingsToFile()
     if (sd.exists("OLA_GNSS_settings.cfg"))
       sd.remove("OLA_GNSS_settings.cfg");
 
-#ifdef USE_EXFAT
-    FsFile settingsFile; //exFat
-#else
-    File settingsFile; //FAT16/32
-#endif
+    SdFile settingsFile;
     if (settingsFile.open("OLA_GNSS_settings.cfg", O_CREAT | O_APPEND | O_WRITE) == false)
     {
       Serial.println("Failed to create settings file");
@@ -62,6 +65,7 @@ void recordSettingsToFile()
     }
 
     settingsFile.println("sizeOfSettings=" + (String)settings.sizeOfSettings);
+    settingsFile.println("olaIdentifier=" + (String)settings.olaIdentifier);
     settingsFile.println("nextDataLogNumber=" + (String)settings.nextDataLogNumber);
 
     // Convert uint64_t to string
@@ -151,8 +155,8 @@ void recordSettingsToFile()
     settingsFile.println("printMinorDebugMessages=" + (String)settings.printMinorDebugMessages);
     settingsFile.println("powerDownQwiicBusBetweenReads=" + (String)settings.powerDownQwiicBusBetweenReads);
     settingsFile.println("qwiicBusMaxSpeed=" + (String)settings.qwiicBusMaxSpeed);
-    settingsFile.println("wakeOnPowerReconnect=" + (String)settings.wakeOnPowerReconnect);
     settingsFile.println("enablePwrLedDuringSleep=" + (String)settings.enablePwrLedDuringSleep);
+    settingsFile.println("useGPIO32ForStopLogging=" + (String)settings.useGPIO32ForStopLogging);
 
     settingsFile.close();
   }
@@ -168,18 +172,14 @@ bool loadSettingsFromFile()
   {
     if (sd.exists("OLA_GNSS_settings.cfg"))
     {
-#ifdef USE_EXFAT
-      FsFile settingsFile; //exFat
-#else
-      File settingsFile; //FAT16/32
-#endif
+      SdFile settingsFile;
       if (settingsFile.open("OLA_GNSS_settings.cfg", O_READ) == false)
       {
         Serial.println("Failed to open settings file");
         return (false);
       }
 
-      char line[50];
+      char line[60];
       int lineNumber = 0;
 
       while (settingsFile.available()) {
@@ -245,7 +245,7 @@ bool parseLine(char* str) {
   if (!str) return false;
 
   //Store this setting name
-  char settingName[30];
+  char settingName[40];
   sprintf(settingName, "%s", str);
 
   //Move pointer to end of line
@@ -280,6 +280,8 @@ bool parseLine(char* str) {
       Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\n", d, sizeof(settings));
 
   }
+  else if (strcmp(settingName, "olaIdentifier") == 0)
+    settings.olaIdentifier = d;
   else if (strcmp(settingName, "nextDataLogNumber") == 0)
     settings.nextDataLogNumber = d;
   else if (strcmp(settingName, "usBetweenReadings") == 0)
@@ -308,10 +310,10 @@ bool parseLine(char* str) {
     settings.powerDownQwiicBusBetweenReads = d;
   else if (strcmp(settingName, "qwiicBusMaxSpeed") == 0)
     settings.qwiicBusMaxSpeed = d;
-  else if (strcmp(settingName, "wakeOnPowerReconnect") == 0)
-    settings.wakeOnPowerReconnect = d;
   else if (strcmp(settingName, "enablePwrLedDuringSleep") == 0)
     settings.enablePwrLedDuringSleep = d;
+  else if (strcmp(settingName, "useGPIO32ForStopLogging") == 0)
+    settings.useGPIO32ForStopLogging = d;
   else
   {
     Serial.print("Unknown setting: ");
