@@ -476,31 +476,14 @@ void resetGNSS()
 
       //Wait 5 secs
       Serial.print(F("GNSS has been reset. Waiting 5 seconds."));
-      for (int i = 0; i < 1000; i++)
+      for (int i = 0; i < 5; i++)
       {
-        delay(1);
+        for (int j = 0; j < 1000; j++)
+        {
+          delay(1);
+        }
+        Serial.print(F("."));
       }
-      Serial.print(F("."));
-      for (int i = 0; i < 1000; i++)
-      {
-        delay(1);
-      }
-      Serial.print(F("."));
-      for (int i = 0; i < 1000; i++)
-      {
-        delay(1);
-      }
-      Serial.print(F("."));
-      for (int i = 0; i < 1000; i++)
-      {
-        delay(1);
-      }
-      Serial.print(F("."));
-      for (int i = 0; i < 1000; i++)
-      {
-        delay(1);
-      }
-      Serial.println(F("."));
     }
   }
 }
