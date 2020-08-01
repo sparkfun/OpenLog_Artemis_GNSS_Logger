@@ -20,16 +20,20 @@ int ubx_expected_checksum_A = 0;
 int ubx_expected_checksum_B = 0;
 
 // Process incoming data bytes according to ubx_state
-// For UBX messages:
-// Sync Char 1: 0xB5
-// Sync Char 2: 0x62
-// Class byte
-// ID byte
-// Length: two bytes, little endian
-// Payload: length bytes
-// Checksum: two bytes
 // Only allow a new file to be opened when a complete packet has been processed and ubx_state has returned to "looking_for_B5"
 // Or when a data error is detected (sync_lost)
+
+// UBX Frame Structure:
+// Sync Char 1: 1-byte  0xB5
+// Sync Char 2: 1-byte  0x62
+// Class:       1-byte  Group of related messages
+// ID byte:     1-byte  Defines message to follow
+// Length:      2-byte  Payload only length. Little-Endian unsigned 16-bit integer
+// Payload:     Variable number of bytes
+// CK_A:        1-byte  16-bit checksum
+// CK_B:        1-byte
+// Example:     B5 62 02 15 0010 4E621058395C5C40000012000101C6BC 06 00
+
 bool processUBX(char c)
 {
   switch (ubx_state) {
@@ -137,13 +141,11 @@ bool processUBX(char c)
         {
           //Print some useful information. Let's keep this message short!
           myRTC.getTime(); //Get the RTC time so we can print it
-          Serial.printf("%04d/%02d/%02d %02d:%02d:%02d.%02d ", (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
+          Serial.printf("20%02d/%02d/%02d %02d:%02d:%02d.%02d ", myRTC.year, myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
+
           //Print the frame information
-          Serial.print(F("UBX Class:0x"));
-          Serial.print(ubx_class, HEX);
-          Serial.print(F(" ID:0x"));
-          if (ubx_ID < 0x10) Serial.print(F("0"));
-          Serial.print(ubx_ID, HEX);
+          Serial.printf("UBX Class: %02X ID: %02X", ubx_class, ubx_ID);
+          
           switch (ubx_class)
           {
             case UBX_CLASS_NAV:

@@ -160,17 +160,6 @@ const int sdPowerDownDelay = 100; //Delay for this many ms before turning off th
 APM3_RTC myRTC; //Create instance of RTC class
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-//Create UART instance for OpenLog style serial logging
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-Uart SerialLog(1, 13, 12);  // Declares a Uart object called Serial1 using instance 1 of Apollo3 UART peripherals with RX on pin 13 and TX on pin 12 (note, you specify *pins* not Apollo3 pads. This uses the variant's pin map to determine the Apollo3 pad)
-unsigned long lastSeriaLogSyncTime = 0;
-const int MAX_IDLE_TIME_MSEC = 500;
-bool newSerialData = false;
-char incomingBuffer[256 * 2]; //This size of this buffer is sensitive. Do not change without analysis using OpenLog_Serial.
-int incomingBufferSpot = 0;
-int charsReceived = 0; //Used for verifying/debugging serial reception
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 //Header files for all possible Qwiic sensors
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -184,12 +173,9 @@ SFE_UBLOX_GPS gpsSensor_ublox;
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint64_t measurementStartTime; //Used to calc the elapsed time
-String outputData;
 String beginSensorOutput;
 unsigned long lastReadTime = 0; //Used to delay between uBlox reads
 unsigned long lastDataLogSyncTime = 0; //Used to sync SD every half second
-bool helperTextPrinted = false; //Print the column headers only once
-bool takeReading = true; //Goes true when enough time has passed between readings or we've woken from sleep
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool rtcHasBeenSyncd = false; //Flag to indicate if the RTC been sync'd to GNSS
 bool rtcNeedsSync = true; //Flag to indicate if the RTC needs to be sync'd (after sleep)
@@ -465,19 +451,19 @@ void updateDataFileAccess()
   }
 }
 
-void updateDataFileWrite()
-{
-  if (rtcHasBeenSyncd == true) //Update the write time stamp if RTC is valid
-  {
-    myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
-    //Update the file write time
-    bool result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));
-      Serial.println(result);
-    }
-  }
+void updateDataFileWrite()  
+{ 
+  if (rtcHasBeenSyncd == true) //Update the write time stamp if RTC is valid  
+  { 
+    myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time 
+    //Update the file write time  
+    bool result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds); 
+    if (settings.printMinorDebugMessages == true) 
+    { 
+      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));  
+      Serial.println(result); 
+    } 
+  } 
 }
 
 void printUint64(uint64_t val)
