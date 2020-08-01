@@ -451,6 +451,21 @@ void updateDataFileAccess()
   }
 }
 
+void updateDataFileWrite()  
+{ 
+  if (rtcHasBeenSyncd == true) //Update the write time stamp if RTC is valid  
+  { 
+    myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time 
+    //Update the file write time  
+    bool result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds); 
+    if (settings.printMinorDebugMessages == true) 
+    { 
+      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));  
+      Serial.println(result); 
+    } 
+  } 
+}
+
 void printUint64(uint64_t val)
 {
   Serial.print("0x");
