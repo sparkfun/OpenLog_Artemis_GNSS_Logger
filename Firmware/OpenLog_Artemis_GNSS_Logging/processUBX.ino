@@ -144,7 +144,7 @@ bool processUBX(char c)
           Serial.printf("20%02d/%02d/%02d %02d:%02d:%02d.%02d ", myRTC.year, myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
 
           //Print the frame information
-          Serial.printf("UBX Class: %02X ID: %02X", ubx_class, ubx_ID);
+          Serial.printf("UBX Class: 0x%02X ID: 0x%02X", ubx_class, ubx_ID);
           
           switch (ubx_class)
           {

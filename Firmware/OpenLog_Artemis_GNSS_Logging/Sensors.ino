@@ -323,7 +323,7 @@ bool detectQwiicDevices()
 
   //Depending on what hardware is configured, the Qwiic bus may have only been turned on a few ms ago
   //Give sensors, specifically those with a low I2C address, time to turn on
-  //delay(100); //SCD30 required >50ms to turn on (commented by PaulZC - we always wait for 250ms after turning on the Qwiic power)
+  delay(750); // ZED-F9P requries ~1s to turn on (commented by PaulZC - we always wait for 250ms after turning on the Qwiic power)
 
   uint8_t address = settings.sensor_uBlox.ubloxI2Caddress;
   

@@ -36,7 +36,7 @@ void menuMain()
 
     Serial.println("q) Quit: Close log files and power down");
 
-    //Serial.println(F("d) Debug Menu"));
+    Serial.println(F("d) Debug Menu"));
 
     Serial.println(F("x) Return to logging"));
 
