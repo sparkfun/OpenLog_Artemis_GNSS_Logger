@@ -1,9 +1,9 @@
 SparkFun OpenLog Artemis : GNSS Logger
 ===========================================================
 
-[![SparkFun OpenLog Artemis](https://cdn.sparkfun.com//assets/parts/1/4/4/8/0/15846-OpenLog_Artemis-01.jpg)](https://www.sparkfun.com/products/15846)
+[![SparkFun OpenLog Artemis](https://cdn.sparkfun.com//assets/parts/1/5/7/5/3/16832-SparkFun_OpenLog_Artemis-01.jpg)](https://www.sparkfun.com/products/16832)
 
-[*SparkFun OpenLog Artemis (SPX-15846)*](https://www.sparkfun.com/products/15846)
+[*SparkFun OpenLog Artemis (SPX-16832)*](https://www.sparkfun.com/products/16832)
 
 The OpenLog Artemis is an open source datalogger that comes preprogrammed to automatically log IMU, GPS, serial data, and various pressure, humidity, and distance sensors. All without writing a single line of code! OLA automatically detects, configures, and logs Qwiic sensors. OLA is designed for users who just need to capture a bunch of data to SD and get back to their larger project.
 
