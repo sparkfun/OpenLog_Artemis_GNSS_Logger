@@ -72,7 +72,7 @@
 
   Version history:
   V1.2 :  Add delay to allow GPS to intialize on v10 hardware
-          Renabled debug menu
+          Unhid the debug menu
   V1.1 :  Upgrades to match v14 of the OpenLog Artemis
           Support for the V10 hardware
   V1.0 :  Initial release based on v13 of the OpenLog Artemis
@@ -90,7 +90,7 @@ const int FIRMWARE_VERSION_MINOR = 2;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x211
+#define OLA_IDENTIFIER 0x212
 
 #include "settings.h"
 
