@@ -50,15 +50,16 @@ New features are constantly being added so we’ve released an easy to use firmw
 Repository Contents
 -------------------
 
-* **/Binaries** - The binary files for the different versions of the OLA firmware
+* **/Binaries** - The binary files for the different versions of the OLA firmware.
 * **/Firmware** - The main sketch that runs on the OpenLog Artemis.
+* **/Utils** - Python utilities to help debug any logging gremlins.
 
 Documentation
 --------------
 
-* **[UPGRADE.md](UPGRADE.md)** - contains full instructions on how to upgrade the firmware on the OLA using the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI)
+* **[UPGRADE.md](UPGRADE.md)** - contains full instructions on how to upgrade the firmware on the OLA using the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI).
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - OLA includes a large number of libraries that will need to be installed before compiling will work.
-* **Hookup Guide** - Coming soon!
+* **Hookup Guide** - Coming soon! You can find the OLA Hookup Guide [here](https://learn.sparkfun.com/tutorials/openlog-artemis-hookup-guide).
 
 License Information
 -------------------
