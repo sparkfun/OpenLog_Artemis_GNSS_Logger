@@ -131,7 +131,7 @@ max_nmea_len = 100 # Maximum length for an NMEA message: use this to detect if w
 sync_lost_at = -1 # Record where we lost sync
 rewind_to = -1 # Keep a note of where we should rewind to if sync is lost
 rewind_attempts = 0 # Keep a note of how many rewinds have been attempted
-max_rewinds = 10 # Abort after this many rewinds
+max_rewinds = 100 # Abort after this many rewinds
 rewind_in_progress = False # Flag to indicate if a rewind is in progress
 resyncs = 0 # Record the number of successful resyncs
 resync_in_progress = False # Flag to indicate if a resync is in progress
@@ -374,6 +374,7 @@ try:
             elif (rewind_to >= 0):
                 print("Sync has been lost. Currently processing byte "+str(processed)+". Rewinding to byte "+str(rewind_to))
                 fi.seek(rewind_to) # Rewind the file
+                processed = rewind_to - 1 # Rewind processed too! (-1 is needed as processed is incremented at the start of the loop)
                 rewind_in_progress = True # Flag that a rewind is in progress
             
 
@@ -392,6 +393,7 @@ finally:
         print('Message types and totals were:')
         for key in messages.keys():
             print('Message type:',key,'  Total:',messages[key])
-    print('Number of successful resyncs:',resyncs)
+    if (resyncs > 0):
+        print('Number of successful resyncs:',resyncs)
     print()
     print('Bye!')
