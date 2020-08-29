@@ -366,12 +366,12 @@ try:
         # Check if we should attempt to rewind
         # Don't rewind if we have not yet seen a valid message
         # Don't rewind if a rewind is already in progress
-        if (ubx_nmea_state == sync_lost) and (len(messages) > 0) and (rewind_in_progress == False):
+        if (ubx_nmea_state == sync_lost) and (len(messages) > 0) and (rewind_in_progress == False) and (rewind_to >= 0):
             rewind_attempts += 1 # Increment the number of rewind attempts
             if (rewind_attempts > max_rewinds): # Only rewind up to max_rewind times
                 print("Panic! Maximum rewind attempts reached! Aborting...")
                 keepGoing = False
-            elif (rewind_to >= 0):
+            else:
                 print("Sync has been lost. Currently processing byte "+str(processed)+". Rewinding to byte "+str(rewind_to))
                 fi.seek(rewind_to) # Rewind the file
                 processed = rewind_to - 1 # Rewind processed too! (-1 is needed as processed is incremented at the start of the loop)
