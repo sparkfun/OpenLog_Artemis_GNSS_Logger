@@ -30,7 +30,7 @@ RingBufferN<24576> GNSSbuffer;
 //Storage for a single UBX frame (so we can discard ACK/NACKs)
 //Needs to be large enough to hold the largest RAWX frame (8 + 16 + (32 * numMeas))
 //RAWX frames can be in excess of 2KB
-const size_t UBXbufferSize = 4096;
+const size_t UBXbufferSize = 8192;
 char UBXbuffer[UBXbufferSize];
 size_t UBXpointer = 0;
 
@@ -220,9 +220,8 @@ bool storeData(void)
           UBXpointer++; //Increment the pointer
           if (UBXpointer == UBXbufferSize) //This should never happen!
           {
-            Serial.print(F("storeData: UBXbuffer overflow! You need to increase the size of UBXbufferSize in storeData. Freezing..."));
-            while(1)
-              ;
+            Serial.print(F("storeData: UBXbuffer overflow! Re-syncing..."));
+            ubx_state = sync_lost; // Discard the data and force a re-sync
           }
 
           if (ubx_state == sync_lost) //If the UBX frame was invalid or we lost sync
