@@ -302,6 +302,9 @@ bool beginSensors()
           }       
       }
 
+      // Enable the selected messages in RAM (MaxWait 1000)
+      enableConstellations(1000);
+      
       //Enable the selected messages in RAM (MaxWait 2100)
       enableMessages(2100);
 
@@ -346,12 +349,12 @@ bool detectQwiicDevices()
 
 //Close the current log file and open a new one
 //This should probably be defined in OpenLog_Artemis_GNSS_Logging as it involves files
-//but it is defined here as it is uBlox-specific
+//but it is defined here as it is u-blox-specific
 void openNewLogFile()
 {
   if (settings.logData && settings.sensor_uBlox.log && online.microSD && online.dataLogging) //If we are logging
   {
-    if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
+    if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
     {
       //Disable all messages in RAM (maxWait 0)
       disableMessages(0);
@@ -390,17 +393,7 @@ void openNewLogFile()
         return;
       }
 
-      if (rtcHasBeenSyncd == true) //Update the create time if the RTC is valid
-      {
-        myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
-        //Update the file create time
-        bool result = gnssDataFile.timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-        if (settings.printMinorDebugMessages == true)
-        {
-          Serial.print(F("openNewLogFile: gnssDataFile.timestamp T_CREATE returned "));
-          Serial.println(result);
-        }
-      }
+      updateDataFileCreate(); //Update the file create time stamp
 
       //(Re)Enable the selected messages in RAM (MaxWait 2100)
       enableMessages(2100);
@@ -410,12 +403,12 @@ void openNewLogFile()
 
 //Close the current log file and do not open a new one
 //This should probably be defined in OpenLog_Artemis_GNSS_Logging as it involves files
-//but it is defined here as it is uBlox-specific
+//but it is defined here as it is u-blox-specific
 void closeLogFile()
 {
   if (settings.logData && settings.sensor_uBlox.log && online.microSD && online.dataLogging) //If we are logging
   {
-    if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
+    if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
     {
       //Disable all messages in RAM (maxWait 0)
       disableMessages(0);
@@ -446,7 +439,7 @@ void resetGNSS()
 {
   if (settings.logData && settings.sensor_uBlox.log && online.microSD && online.dataLogging) //If we are logging
   {
-    if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
+    if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
     {
       //Disable all messages in RAM (maxWait 0)
       disableMessages(0);
@@ -564,6 +557,32 @@ uint8_t enableMessages(uint16_t maxWait)
     }       
   }
   return(success);
+}
+
+uint8_t enableConstellations(uint16_t maxWait)
+{
+  //Enable the selected constellations
+  uint8_t success = true;
+  success &= gpsSensor_ublox.newCfgValset8(0x1031001f, settings.sensor_uBlox.enableGPS, VAL_LAYER_RAM);  //CFG-SIGNAL-GPS_ENA   : Enable GPS (in RAM only)
+  success &= gpsSensor_ublox.addCfgValset8(0x10310025, settings.sensor_uBlox.enableGLO);                 //CFG-SIGNAL-GLO_ENA   : Enable GLONASS
+  success &= gpsSensor_ublox.addCfgValset8(0x10310021, settings.sensor_uBlox.enableGAL);                 //CFG-SIGNAL-GAL_ENA   : Enable Galileo
+  success &= gpsSensor_ublox.addCfgValset8(0x10310022, settings.sensor_uBlox.enableBDS);                 //CFG-SIGNAL-BDS_ENA   : Enable BeiDou
+  success &= gpsSensor_ublox.sendCfgValset8(0x10310024, settings.sensor_uBlox.enableQZSS, maxWait);      //CFG-SIGNAL-QZSS_ENA  : Enable QZSS (maxWait 2100 ms)
+  if (success > 0)
+  {
+    if (settings.printMinorDebugMessages)
+    {
+      Serial.println(F("enableConstellations: sendCfgValset was successful when enabling constellations"));
+    }
+  }
+  else if (maxWait > 0) // If maxWait was zero then we expect success to be false
+  {
+    if (settings.printMajorDebugMessages)
+    {
+      Serial.println(F("enableConstellations: sendCfgValset failed when enabling constellations"));
+    }
+  }
+  return (success);
 }
 
 uint8_t powerManagementTask(uint32_t duration, uint16_t maxWait) //Put the module to sleep for duration ms

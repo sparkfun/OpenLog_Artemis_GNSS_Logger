@@ -1,8 +1,8 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: August 22st, 2020
-  Version: V1.2
+  Date: August 29th, 2020
+  Version: V1.3
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX
   messages from the u-blox F9 and M9 GNSS receivers.
@@ -71,8 +71,9 @@
   https://www.sparkfun.com/products/15793
 
   Version history:
+  V1.3 :  Add functionality to enable/disable GNSS constellations
   V1.2 :  Add delay to allow GPS to intialize on v10 hardware
-          Renabled debug menu
+          Unhid the debug menu
   V1.1 :  Upgrades to match v14 of the OpenLog Artemis
           Support for the V10 hardware
   V1.0 :  Initial release based on v13 of the OpenLog Artemis
@@ -80,7 +81,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 2;
+const int FIRMWARE_VERSION_MINOR = 3;
 
 //Define the OLA board identifier:
 //  This is an int which is unique to this variant of the OLA and which allows us
@@ -90,7 +91,7 @@ const int FIRMWARE_VERSION_MINOR = 2;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x211
+#define OLA_IDENTIFIER 0x213
 
 #include "settings.h"
 
@@ -176,7 +177,7 @@ SFE_UBLOX_GPS gpsSensor_ublox;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint64_t measurementStartTime; //Used to calc the elapsed time
 String beginSensorOutput;
-unsigned long lastReadTime = 0; //Used to delay between uBlox reads
+unsigned long lastReadTime = 0; //Used to delay between u-blox reads
 unsigned long lastDataLogSyncTime = 0; //Used to sync SD every half second
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool rtcHasBeenSyncd = false; //Flag to indicate if the RTC been sync'd to GNSS

@@ -1,21 +1,26 @@
 //Sensor settings
 
-// settings.sensor_uBlox.log     : indicates if the user has enabled uBlox logging. Set by menu 2, sub-menu 1, option 1. Possible redundancy with setings.logData as we only have one sensor.
+// settings.sensor_uBlox.log     : indicates if the user has enabled u-blox logging. Set by menu 2, sub-menu 1, option 1. Possible redundancy with setings.logData as we only have one sensor.
 // settings.enableSD             : defines if the SD card should be enabled by beginSD(). Only set in settings.h. Doesn't appear to be able to be changed by the user? Possibly redundant?
 // settings.enableTerminalOutput : indicates if the user has enabled Terminal logging - i.e. should the UBX Class and ID be displayed for every frame. Set by menu 1, option 2.
 // setings.logData               : indicates if the user has enabled SD card logging. Set by menu 1, option 1.
 // online.microSD                : indicates if the SD card is ready for data logging. Set by beginSD().
 // online.dataLogging            : indicates if the SD card log file is open and ready to receive data. Set by beginDataLogging().
-// qwiicAvailable.uBlox          : indicates if there is a uBlox module connected. Set by detectQwiicDevices().
+// qwiicAvailable.uBlox          : indicates if there is a u-blox module connected. Set by detectQwiicDevices().
 // qwiicOnline.uBlox             : indicates if the module has been configured, or needs to be configured. Set true by beginSensors().
 
-//Default uBlox I2C address
+//Default u-blox I2C address
 #define ADR_UBLOX 0x42
 
 //u-blox settings
 struct struct_uBlox {
   bool log = true;
   bool powerManagement = true;
+  bool enableGPS = true;
+  bool enableGLO = true;
+  bool enableGAL = true;
+  bool enableBDS = true;
+  bool enableQZSS = true;
   bool logUBXNAVCLOCK = false;
   bool logUBXNAVHPPOSECEF = false;
   bool logUBXNAVHPPOSLLH = false;
@@ -28,8 +33,8 @@ struct struct_uBlox {
   bool logUBXNAVTIMEUTC = true;
   bool logUBXNAVVELECEF = false;
   bool logUBXNAVVELNED = false;
-  bool logUBXRXMRAWX = false;
-  bool logUBXRXMSFRBX = false;
+  bool logUBXRXMRAWX = true;
+  bool logUBXRXMSFRBX = true;
   bool logUBXTIMTM2 = false;
   bool enableUSB = true;
   bool enableUART1 = true;

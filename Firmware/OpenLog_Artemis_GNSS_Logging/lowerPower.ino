@@ -119,7 +119,7 @@ void goToSleep()
     pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
   }
   
-  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
+  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
   {
     //Disable all messages in RAM otherwise they will fill up the module's I2C buffer while we are asleep
     //(Possibly redundant if using a power management task?)
@@ -334,7 +334,7 @@ void stopLogging(void)
 {
   detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
   
-  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
+  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
   {
     //Disable all messages in RAM
     disableMessages(0);
