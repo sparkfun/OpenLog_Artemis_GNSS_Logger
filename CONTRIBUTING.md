@@ -11,6 +11,8 @@ If you decide to add a feature to OpenLog Artemis GNSS Logger, please create a P
 * If you add new functions also add them to _keywords.txt_ so that they are properly highlighted in Arduino. [Read more](https://www.arduino.cc/en/Hacking/libraryTutorial).
 * Please submit your PR using the [release-candidate branch](https://github.com/sparkfun/OpenLog_Artemis_GNSS_Logger/tree/release_candidate). That way, we can merge and test your PR quickly without changing the _master_ branch
 
+![Contributing.JPG](./img/Contributing.JPG)
+
 ## Style guide
 
 Please read and follow the [Arduino API style guide](https://www.arduino.cc/en/Reference/APIStyleGuide). Also read and consider the [Arduino style guide](https://www.arduino.cc/en/Reference/StyleGuide).
