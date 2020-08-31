@@ -45,7 +45,7 @@ The menus will let you configure:
 * Logging and sleep durations. Want to log RAWX data for 10 minutes once per day? You can absolutely do that!
 * Power management. You can choose to put the GNSS module to sleep or disconnect its power completely between logging sessions.
 
-New features are constantly being added so we’ve released an easy to use firmware upgrade tool. No need to install Arduino or a bunch of libraries, simply open the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI), load the latest OLA firmware, and add features to OpenLog Artemis as they come out! Full instructions are available in [UPGRADE.md](UPGRADE.md).
+New features are constantly being added so we’ve released an easy to use firmware upgrade tool. No need to install Arduino or a bunch of libraries, simply open the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI), load the latest OLA firmware, and add features to OpenLog Artemis as they come out! Full instructions are available in [UPGRADE.md](./UPGRADE.md).
 
 Repository Contents
 -------------------
@@ -53,11 +53,12 @@ Repository Contents
 * **/Binaries** - The binary files for the different versions of the OLA firmware.
 * **/Firmware** - The main sketch that runs on the OpenLog Artemis.
 * **/Utils** - Python utilities to help debug any logging gremlins.
+* **[CONTRIBUTING.md](./CONTRIBUTING.md)** - guidance on how to contribute to this library.
 
 Documentation
 --------------
 
-* **[UPGRADE.md](UPGRADE.md)** - contains full instructions on how to upgrade the firmware on the OLA using the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI).
+* **[UPGRADE.md](./UPGRADE.md)** - contains full instructions on how to upgrade the firmware on the OLA using the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI).
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - OLA includes a large number of libraries that will need to be installed before compiling will work.
 * **Hookup Guide** - Coming soon! You can find the OLA Hookup Guide [here](https://learn.sparkfun.com/tutorials/openlog-artemis-hookup-guide).
 
