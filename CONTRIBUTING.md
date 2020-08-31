@@ -9,7 +9,7 @@ If you decide to add a feature to OpenLog Artemis GNSS Logger, please create a P
 * Change as little as possible. Do not sumbit a PR that changes 100 lines of whitespace. Break up into multiple PRs if necessary.
 * If you add a new feature, please document how it works in the PR.
 * If you add new functions also add them to _keywords.txt_ so that they are properly highlighted in Arduino. [Read more](https://www.arduino.cc/en/Hacking/libraryTutorial).
-* Please submit your PR using the [release-candidate branch](https://github.com/sparkfun/OpenLog_Artemis_GNSS_Logger/tree/release-candidate). That way, we can merge and test your PR quickly without changing the _master_ branch
+* Please submit your PR using the [release-candidate branch](https://github.com/sparkfun/OpenLog_Artemis_GNSS_Logger/tree/release_candidate). That way, we can merge and test your PR quickly without changing the _master_ branch
 
 ## Style guide
 
