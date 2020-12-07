@@ -75,6 +75,7 @@
   Version history:
   V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino
           Added improved log file timestamping - same as the OLA
+          Add functionality to enable/disable GNSS constellations (thank you @adamgarbo)
   V1.2 :  Add delay to allow GPS to intialize on v10 hardware
           Unhid the debug menu
   V1.1 :  Upgrades to match v14 of the OpenLog Artemis
@@ -174,7 +175,7 @@ SFE_UBLOX_GPS gpsSensor_ublox;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint64_t measurementStartTime; //Used to calc the elapsed time
 String beginSensorOutput;
-unsigned long lastReadTime = 0; //Used to delay between uBlox reads
+unsigned long lastReadTime = 0; //Used to delay between u-blox reads
 unsigned long lastDataLogSyncTime = 0; //Used to sync SD every half second
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool rtcHasBeenSyncd = false; //Flag to indicate if the RTC been sync'd to GNSS

@@ -75,7 +75,7 @@ bool storeData(void)
   bool ret_val = true; //The return value
 
   if ((qwiicOnline.uBlox == false) || (qwiicAvailable.uBlox == false))
-    goto SD_WRITE; // uBlox is offline so let's not try to talk to it. But we will still try to save any remaining data to SD.
+    goto SD_WRITE; // u-blox is offline so let's not try to talk to it. But we will still try to save any remaining data to SD.
   
   //Check for new I2C data three times faster than usBetweenReadings to avoid pounding the I2C bus
   if ((micros() - lastReadTime) > (settings.usBetweenReadings / 3))
@@ -98,10 +98,10 @@ bool storeData(void)
       uint8_t lsb = qwiic.read();
       if (lsb == 0xFF)
       {
-        //I believe this is a Ublox bug. Device should never present an 0xFF.
+        //I believe this is a u-blox bug. Device should never present an 0xFF.
         if (settings.printMajorDebugMessages == true)
         {
-          Serial.println(F("storeData: Ublox bug, length lsb is 0xFF"));
+          Serial.println(F("storeData: u-blox bug, length lsb is 0xFF"));
         }
         if (PIN_LOGIC_DEBUG >= 0)
         {
