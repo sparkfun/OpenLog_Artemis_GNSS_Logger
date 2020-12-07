@@ -247,7 +247,7 @@ bool beginSensors()
         if ((settings.sensor_uBlox.enableGLO) || (settings.sensor_uBlox.enableGAL) || (settings.sensor_uBlox.enableBDS) || (settings.sensor_uBlox.enableQZSS))
         {
           Serial.println(F("*** !!! WARNING !!! ***"));
-          Serial.println(F("*** You may need to disable GLONASS, Galileo, BeiDou and QZSS to achieve the selected measurement interval ***"));
+          Serial.println(F("*** You may need to disable GLONASS, Galileo, BeiDou and QZSS to achieve the selected logging rate ***"));
           Serial.println(F("*** (Use the \"Configure GNSS Device\" menu to disable them) ***"));
         }        
       }
