@@ -239,51 +239,23 @@ bool beginSensors()
         measRate = (uint16_t)(settings.usBetweenReadings / 1000); // Convert usBetweenReadings to ms
       }
       
-      //If measurement interval is less than minMeasIntervalAll then disable all constellations except GPS
-      //If measurement interval is less than minMeasIntervalRAWXAll and RAWX is enabled then also disable all constellations except GPS to limit I2C traffic
+      //If measurement interval is less than minMeasIntervalAll then warn the user that they may need to disable all constellations except GPS
+      //If measurement interval is less than minMeasIntervalRAWXAll and RAWX is enabled then also warn the user
       if ((measRate < settings.sensor_uBlox.minMeasIntervalAll) || ((measRate < settings.sensor_uBlox.minMeasIntervalRAWXAll) && (settings.sensor_uBlox.logUBXRXMRAWX == true)))
       {
-        gpsSensor_ublox.newCfgValset8(0x10310021, 0, VAL_LAYER_RAM); // CFG-SIGNAL-GAL_ENA : Disable Galileo (in RAM only)
-        gpsSensor_ublox.addCfgValset8(0x10310022, 0); // CFG-SIGNAL-BDS_ENA : Disable BeiDou
-        gpsSensor_ublox.addCfgValset8(0x10310024, 0); // CFG-SIGNAL-QZSS_ENA : Disable QZSS
-        success = gpsSensor_ublox.sendCfgValset8(0x10310025, 0, 2100); // CFG-SIGNAL-GLO_ENA : Disable GLONASS (maxWait 2100ms)
-        if (success == 0)
+        // Check if any constellations other than GPS are enabled
+        if ((settings.sensor_uBlox.enableGLO) || (settings.sensor_uBlox.enableGAL) || (settings.sensor_uBlox.enableBDS) || (settings.sensor_uBlox.enableQZSS))
         {
-          if (settings.printMajorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset failed when disabling constellations")); 
-            }       
-        }
-        else
-        {
-          if (settings.printMinorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset was successful when disabling constellations")); 
-            }       
-        }        
-      }
-      else
-      {
-        gpsSensor_ublox.newCfgValset8(0x10310021, 1, VAL_LAYER_RAM); // CFG-SIGNAL-GAL_ENA : Enable Galileo (in RAM only)
-        gpsSensor_ublox.addCfgValset8(0x10310022, 1); // CFG-SIGNAL-BDS_ENA : Enable BeiDou
-        gpsSensor_ublox.addCfgValset8(0x10310024, 1); // CFG-SIGNAL-QZSS_ENA : Enable QZSS
-        success = gpsSensor_ublox.sendCfgValset8(0x10310025, 1, 2100); // CFG-SIGNAL-GLO_ENA : Enable GLONASS (maxWait 2100ms)
-        if (success == 0)
-        {
-          if (settings.printMajorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset failed when enabling constellations")); 
-            }       
-        }
-        else
-        {
-          if (settings.printMinorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset was successful when enabling constellations")); 
-            }       
+          Serial.println(F("*** !!! WARNING !!! ***"));
+          Serial.println(F("*** You may need to disable GLONASS, Galileo, BeiDou and QZSS to achieve the selected measurement interval ***"));
+          Serial.println(F("*** (Use the \"Configure GNSS Device\" menu to disable them) ***"));
         }        
       }
 
+      // Enable/Disable the selected constellations in RAM (MaxWait 2100)
+      // Let's do this before we set the message rate and enable messages
+      enableConstellations(2100);
+      
       //Set output rate
       gpsSensor_ublox.newCfgValset16(0x30210001, measRate, VAL_LAYER_RAM); // CFG-RATE-MEAS : Configure measurement period (in RAM only)
       success = gpsSensor_ublox.sendCfgValset16(0x30210002, 1, 2100); // CFG-RATE-NAV : 1 measurement per navigation solution (maxWait 2100ms)
@@ -302,9 +274,6 @@ bool beginSensors()
           }       
       }
 
-      // Enable the selected messages in RAM (MaxWait 1000)
-      enableConstellations(1000);
-      
       //Enable the selected messages in RAM (MaxWait 2100)
       enableMessages(2100);
 
@@ -393,7 +362,7 @@ void openNewLogFile()
         return;
       }
 
-      updateDataFileCreate(); //Update the file create time stamp
+      updateDataFileCreate(&gnssDataFile); //Update the file create time stamp
 
       //(Re)Enable the selected messages in RAM (MaxWait 2100)
       enableMessages(2100);
