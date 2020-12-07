@@ -180,8 +180,9 @@ bool storeData(void)
   
       //Limit to 32 bytes or whatever the buffer limit is for given platform
       uint16_t bytesToRead = bytesAvailable;
-      if (bytesToRead > I2C_BUFFER_LENGTH)
-        bytesToRead = I2C_BUFFER_LENGTH;
+      uint16_t maxTransaction = (uint16_t)(gpsSensor_ublox.getI2CTransactionSize());
+      if (bytesToRead > maxTransaction)
+        bytesToRead = maxTransaction;
   
     TRY_AGAIN:
   
