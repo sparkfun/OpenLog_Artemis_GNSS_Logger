@@ -373,7 +373,7 @@ void openNewLogFile()
       Serial.println(gnssDataFileName);
       gnssDataFile.sync();
 
-      updateDataFileAccess(); //Update the file access time stamp
+      updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
 
       gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
 
@@ -427,7 +427,7 @@ void closeLogFile()
       Serial.println(gnssDataFileName);
       gnssDataFile.sync();
 
-      updateDataFileAccess(); //Update the file access time stamp
+      updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
 
       gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
     }
@@ -458,7 +458,7 @@ void resetGNSS()
       Serial.println(gnssDataFileName);
       gnssDataFile.sync();
 
-      updateDataFileAccess(); //Update the file access time stamp
+      updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
 
       gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
 

@@ -1,12 +1,14 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: August 29th, 2020
+  Date: December 7th, 2020
   Version: V1.3
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX
   messages from the u-blox F9 and M9 GNSS receivers.
   
+  The Board should be set to SparkFun Apollo3 \ SparkFun RedBoard Artemis ATP.
+
   Messages are streamed directly to SD in UBX format without being processed.
   The SD log files can be analysed afterwards with (e.g.) u-center or RTKLIB.
 
@@ -71,7 +73,9 @@
   https://www.sparkfun.com/products/15793
 
   Version history:
-  V1.3 :  Add functionality to enable/disable GNSS constellations
+  V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino
+          Added improved log file timestamping - same as the OLA
+          Add functionality to enable/disable GNSS constellations (thank you @adamgarbo)
   V1.2 :  Add delay to allow GPS to intialize on v10 hardware
           Unhid the debug menu
   V1.1 :  Upgrades to match v14 of the OpenLog Artemis
@@ -91,7 +95,7 @@ const int FIRMWARE_VERSION_MINOR = 3;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x213
+#define OLA_IDENTIFIER 0x213 // This will appear as 531 (decimal) in OLA_GNSS_settings.cfg
 
 #include "settings.h"
 
@@ -103,12 +107,6 @@ const int FIRMWARE_VERSION_MINOR = 3;
 #define HARDWARE_VERSION_MINOR 0
 
 #if(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 4)
-const byte PIN_MICROSD_CHIP_SELECT = 10;
-const byte PIN_IMU_POWER = 22;
-#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 5)
-const byte PIN_MICROSD_CHIP_SELECT = 10;
-const byte PIN_IMU_POWER = 22;
-#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
 const byte PIN_MICROSD_CHIP_SELECT = 10;
 const byte PIN_IMU_POWER = 22;
 #elif(HARDWARE_VERSION_MAJOR == 1 && HARDWARE_VERSION_MINOR == 0)
@@ -408,7 +406,7 @@ void beginDataLogging()
       return;
     }
 
-    updateDataFileCreate(); //Update the data file creation time stamp
+    updateDataFileCreate(&gnssDataFile); //Update the data file creation time stamp
 
     online.dataLogging = true;
   }
@@ -417,56 +415,26 @@ void beginDataLogging()
 
 }
 
-void updateDataFileCreate()
+void updateDataFileCreate(SdFile *dataFile)
 {
   if (rtcHasBeenSyncd == true) //Update the create time stamp if the RTC is valid
   {
     myRTC.getTime(); //Get the RTC time so we can use it to update the create time
     //Update the file create time
-    bool result = gnssDataFile.timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileCreate: gnssDataFile.timestamp T_CREATE returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
   }
 }
 
-void updateDataFileAccess()
+void updateDataFileAccess(SdFile *dataFile)
 {
   if (rtcHasBeenSyncd == true) //Update the write and access time stamps if RTC is valid
   {
     myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
     //Update the file access time
-    bool result = gnssDataFile.timestamp(T_ACCESS, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_ACCESS returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_ACCESS, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
     //Update the file write time
-    result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
   }
-}
-
-void updateDataFileWrite()  
-{ 
-  if (rtcHasBeenSyncd == true) //Update the write time stamp if RTC is valid  
-  { 
-    myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time 
-    //Update the file write time  
-    bool result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds); 
-    if (settings.printMinorDebugMessages == true) 
-    { 
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));  
-      Serial.println(result); 
-    } 
-  } 
 }
 
 void printUint64(uint64_t val)

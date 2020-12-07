@@ -30,7 +30,7 @@ RingBufferN<24576> GNSSbuffer;
 //Storage for a single UBX frame (so we can discard ACK/NACKs)
 //Needs to be large enough to hold the largest RAWX frame (8 + 16 + (32 * numMeas))
 //RAWX frames can be in excess of 2KB
-const size_t UBXbufferSize = 4096;
+const size_t UBXbufferSize = 8192;
 char UBXbuffer[UBXbufferSize];
 size_t UBXpointer = 0;
 
@@ -180,8 +180,9 @@ bool storeData(void)
   
       //Limit to 32 bytes or whatever the buffer limit is for given platform
       uint16_t bytesToRead = bytesAvailable;
-      if (bytesToRead > I2C_BUFFER_LENGTH)
-        bytesToRead = I2C_BUFFER_LENGTH;
+      uint16_t maxTransaction = (uint16_t)(gpsSensor_ublox.getI2CTransactionSize());
+      if (bytesToRead > maxTransaction)
+        bytesToRead = maxTransaction;
   
     TRY_AGAIN:
   
@@ -220,9 +221,8 @@ bool storeData(void)
           UBXpointer++; //Increment the pointer
           if (UBXpointer == UBXbufferSize) //This should never happen!
           {
-            Serial.print(F("storeData: UBXbuffer overflow! You need to increase the size of UBXbufferSize in storeData. Freezing..."));
-            while(1)
-              ;
+            Serial.print(F("storeData: UBXbuffer overflow! Re-syncing..."));
+            ubx_state = sync_lost; // Discard the data and force a re-sync
           }
 
           if (ubx_state == sync_lost) //If the UBX frame was invalid or we lost sync
@@ -452,7 +452,6 @@ bool storeData(void)
         SDpointer = 0; //Reset the SDpointer
         digitalWrite(PIN_STAT_LED, HIGH); //Flash the LED while writing
         gnssDataFile.write(SDbuffer, SDpacket); //Record the buffer to the card
-//        updateDataFileWrite(); //Update the file write time stamp
         digitalWrite(PIN_STAT_LED, LOW);
         keep_going = false; //Stop now that we have written one packet
       }
@@ -473,7 +472,8 @@ bool storeData(void)
         SDpointer = 0; //Reset the SDpointer
       }
       gnssDataFile.sync(); //sync the file system
-//      updateDataFileAccess(); //Update the file access time stamp
+      if (settings.frequentFileAccessTimestamps == true)
+        updateDataFileAccess(&gnssDataFile); // Update the file access time & date
       digitalWrite(PIN_STAT_LED, LOW);
     }
 

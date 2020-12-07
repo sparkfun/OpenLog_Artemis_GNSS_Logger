@@ -157,7 +157,9 @@ void recordSettingsToFile()
     settingsFile.println("qwiicBusMaxSpeed=" + (String)settings.qwiicBusMaxSpeed);
     settingsFile.println("enablePwrLedDuringSleep=" + (String)settings.enablePwrLedDuringSleep);
     settingsFile.println("useGPIO32ForStopLogging=" + (String)settings.useGPIO32ForStopLogging);
+    settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
 
+    updateDataFileAccess(&settingsFile); // Update the file access time & date
     settingsFile.close();
   }
 }
@@ -314,6 +316,8 @@ bool parseLine(char* str) {
     settings.enablePwrLedDuringSleep = d;
   else if (strcmp(settingName, "useGPIO32ForStopLogging") == 0)
     settings.useGPIO32ForStopLogging = d;
+  else if (strcmp(settingName, "frequentFileAccessTimestamps") == 0)
+    settings.frequentFileAccessTimestamps = d;
   else
   {
     Serial.print("Unknown setting: ");
