@@ -74,6 +74,7 @@
 
   Version history:
   V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino
+          Added improved log file timestamping - same as the OLA
   V1.2 :  Add delay to allow GPS to intialize on v10 hardware
           Unhid the debug menu
   V1.1 :  Upgrades to match v14 of the OpenLog Artemis
