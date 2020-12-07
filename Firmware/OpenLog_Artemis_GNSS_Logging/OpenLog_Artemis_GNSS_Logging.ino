@@ -404,7 +404,7 @@ void beginDataLogging()
       return;
     }
 
-    updateDataFileCreate(); //Update the data file creation time stamp
+    updateDataFileCreate(&gnssDataFile); //Update the data file creation time stamp
 
     online.dataLogging = true;
   }
@@ -413,56 +413,26 @@ void beginDataLogging()
 
 }
 
-void updateDataFileCreate()
+void updateDataFileCreate(SdFile *dataFile)
 {
   if (rtcHasBeenSyncd == true) //Update the create time stamp if the RTC is valid
   {
     myRTC.getTime(); //Get the RTC time so we can use it to update the create time
     //Update the file create time
-    bool result = gnssDataFile.timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileCreate: gnssDataFile.timestamp T_CREATE returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
   }
 }
 
-void updateDataFileAccess()
+void updateDataFileAccess(SdFile *dataFile)
 {
   if (rtcHasBeenSyncd == true) //Update the write and access time stamps if RTC is valid
   {
     myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
     //Update the file access time
-    bool result = gnssDataFile.timestamp(T_ACCESS, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_ACCESS returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_ACCESS, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
     //Update the file write time
-    result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
   }
-}
-
-void updateDataFileWrite()  
-{ 
-  if (rtcHasBeenSyncd == true) //Update the write time stamp if RTC is valid  
-  { 
-    myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time 
-    //Update the file write time  
-    bool result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds); 
-    if (settings.printMinorDebugMessages == true) 
-    { 
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));  
-      Serial.println(result); 
-    } 
-  } 
 }
 
 void printUint64(uint64_t val)

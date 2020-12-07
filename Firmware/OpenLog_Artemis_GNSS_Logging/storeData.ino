@@ -452,7 +452,6 @@ bool storeData(void)
         SDpointer = 0; //Reset the SDpointer
         digitalWrite(PIN_STAT_LED, HIGH); //Flash the LED while writing
         gnssDataFile.write(SDbuffer, SDpacket); //Record the buffer to the card
-//        updateDataFileWrite(); //Update the file write time stamp
         digitalWrite(PIN_STAT_LED, LOW);
         keep_going = false; //Stop now that we have written one packet
       }
@@ -473,7 +472,8 @@ bool storeData(void)
         SDpointer = 0; //Reset the SDpointer
       }
       gnssDataFile.sync(); //sync the file system
-//      updateDataFileAccess(); //Update the file access time stamp
+      if (settings.frequentFileAccessTimestamps == true)
+        updateDataFileAccess(&gnssDataFile); // Update the file access time & date
       digitalWrite(PIN_STAT_LED, LOW);
     }
 
