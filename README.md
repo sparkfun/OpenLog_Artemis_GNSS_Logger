@@ -18,6 +18,7 @@ The OpenLog Artemis automatically scans, detects, configures, and logs various Q
 
 * [ZED-F9P](https://www.sparkfun.com/products/15136)
 * [ZED-F9P SMA](https://www.sparkfun.com/products/16481)
+* [ZED-F9R](https://www.sparkfun.com/products/16344)
 * [NEO-M9N](https://www.sparkfun.com/products/15712)
 * More boards are being added all the time!
 
@@ -27,6 +28,7 @@ The menus will let you configure:
 
 * Which messages are logged. You can currently select from:
   * UBX-NAV-CLOCK     (Clock Solution)
+  * UBX-NAV-DOP       (Dilution Of Precision)
   * UBX-NAV-HPPOSECEF (High Precision Position Earth-Centered Earth-Fixed)
   * UBX-NAV-HPPOSLLH  (High Precision Position Lat/Lon/Height)
   * UBX-NAV-ODO       (Odometer)
@@ -40,6 +42,7 @@ The menus will let you configure:
   * UBX-RXM-SFRBX     (Broadcast Navigation Data Subframe)
   * UBX-TIM-TM2       (Time Mark Data)
 * If your module supports them, you can also log:
+  * UBX-NAV-ATT       (Attitude Solution) (Currently only supported on the ZED-F9R)
   * UBX-NAV-RELPOSNED (Relative Position North/East/Down)
   * UBX-RXM-RAWX      (Multi-GNSS Raw Measurement)
 * Logging and sleep durations. Want to log RAWX data for 10 minutes once per day? You can absolutely do that!
@@ -53,12 +56,12 @@ Repository Contents
 * **/Binaries** - The binary files for the different versions of the OLA firmware.
 * **/Firmware** - The main sketch that runs on the OpenLog Artemis.
 * **/Utils** - Python utilities to help debug any logging gremlins.
-* **[CONTRIBUTING.md](./CONTRIBUTING.md)** - guidance on how to contribute to this library.
 
 Documentation
 --------------
 
 * **[UPGRADE.md](./UPGRADE.md)** - contains full instructions on how to upgrade the firmware on the OLA using the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI).
+* **[CONTRIBUTING.md](./CONTRIBUTING.md)** - guidance on how to contribute to this library.
 * **[Installing an Arduino Library Guide](https://learn.sparkfun.com/tutorials/installing-an-arduino-library)** - OLA includes a large number of libraries that will need to be installed before compiling will work.
 * **Hookup Guide** - Coming soon! You can find the OLA Hookup Guide [here](https://learn.sparkfun.com/tutorials/openlog-artemis-hookup-guide).
 

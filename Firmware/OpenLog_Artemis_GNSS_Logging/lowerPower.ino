@@ -1,3 +1,53 @@
+// Read the battery voltage
+// If it is low, increment lowBatteryReadings
+// If lowBatteryReadings exceeds lowBatteryReadingsLimit then powerDown
+void checkBattery(void)
+{
+#if(HARDWARE_VERSION_MAJOR >= 1)
+  if (settings.enableLowBatteryDetection == true)
+  {
+    float voltage = readVIN(); // Read the battery voltage
+    if (voltage < settings.lowBatteryThreshold) // Is the voltage low?
+    {
+      lowBatteryReadings++; // Increment the low battery count
+      if (lowBatteryReadings > lowBatteryReadingsLimit) // Have we exceeded the low battery count limit?
+      {
+        // Gracefully powerDown
+
+        //Save files before going to sleep
+        if (online.dataLogging == true)
+        {
+          unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
+          while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
+          {
+            storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+          }
+      
+          gnssDataFile.sync();
+      
+          updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
+      
+          gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
+        }
+
+        delay(sdPowerDownDelay); // Give the SD card time to finish writing ***** THIS IS CRITICAL *****
+
+        Serial.println(F("***      LOW BATTERY VOLTAGE DETECTED! GOING INTO POWERDOWN      ***"));
+        Serial.println(F("*** PLEASE CHANGE THE POWER SOURCE AND RESET THE OLA TO CONTINUE ***"));
+      
+        Serial.flush(); //Finish any prints
+
+        powerDown(); // power down and wait for reset
+      }
+    }
+    else
+    {
+      lowBatteryReadings = 0; // Reset the low battery count (to reject noise)
+    }    
+  }
+#endif
+}
+
 //Power down the entire system but maintain running of RTC
 //This function takes 100us to run including GPIO setting
 //This puts the Apollo3 into 2.36uA to 2.6uA consumption mode
@@ -119,7 +169,7 @@ void goToSleep()
     pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
   }
   
-  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
+  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
   {
     //Disable all messages in RAM otherwise they will fill up the module's I2C buffer while we are asleep
     //(Possibly redundant if using a power management task?)
@@ -139,7 +189,7 @@ void goToSleep()
 
     gnssDataFile.sync();
 
-    updateDataFileAccess(); //Update the file access time stamp
+    updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
 
     gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
 
@@ -197,10 +247,10 @@ void goToSleep()
 
   //We can't leave these power control pins floating
   imuPowerOff();
-  //microSDPowerOff();
+  microSDPowerOff();
 
   //Testing file record issues
-  microSDPowerOn();
+  //microSDPowerOn();
 
   //Keep Qwiic bus powered on if user desires it
   if (settings.powerDownQwiicBusBetweenReads == true)
@@ -313,7 +363,11 @@ void wakeFromSleep()
   beginSD(); //285 - 293ms
 
   beginQwiic();
-  delay(250); // Allow extra time for the qwiic sensors to power up
+  for (int i = 0; i < 250; i++) // Allow extra time for the qwiic sensors to power up
+  {
+    checkBattery(); // Check for low battery
+    delay(1);
+  }
 
   beginDataLogging(); //180ms
 
@@ -334,7 +388,7 @@ void stopLogging(void)
 {
   detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
   
-  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the uBlox is available and logging
+  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
   {
     //Disable all messages in RAM
     disableMessages(0);
@@ -353,7 +407,7 @@ void stopLogging(void)
 
     gnssDataFile.sync();
 
-    updateDataFileAccess(); //Update the file access time stamp
+    updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
 
     gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
   }

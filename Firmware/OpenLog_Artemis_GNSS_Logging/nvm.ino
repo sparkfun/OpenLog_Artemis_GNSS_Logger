@@ -157,7 +157,12 @@ void recordSettingsToFile()
     settingsFile.println("qwiicBusMaxSpeed=" + (String)settings.qwiicBusMaxSpeed);
     settingsFile.println("enablePwrLedDuringSleep=" + (String)settings.enablePwrLedDuringSleep);
     settingsFile.println("useGPIO32ForStopLogging=" + (String)settings.useGPIO32ForStopLogging);
+    settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
+    settingsFile.println("enableLowBatteryDetection=" + (String)settings.enableLowBatteryDetection);
+    settingsFile.println("lowBatteryThreshold=" + (String)settings.lowBatteryThreshold);
+    settingsFile.println("vinCorrectionFactor=" + (String)settings.vinCorrectionFactor);
 
+    updateDataFileAccess(&settingsFile); // Update the file access time & date
     settingsFile.close();
   }
 }
@@ -314,6 +319,14 @@ bool parseLine(char* str) {
     settings.enablePwrLedDuringSleep = d;
   else if (strcmp(settingName, "useGPIO32ForStopLogging") == 0)
     settings.useGPIO32ForStopLogging = d;
+  else if (strcmp(settingName, "frequentFileAccessTimestamps") == 0)
+    settings.frequentFileAccessTimestamps = d;
+  else if (strcmp(settingName, "enableLowBatteryDetection") == 0)
+    settings.enableLowBatteryDetection = d;
+  else if (strcmp(settingName, "lowBatteryThreshold") == 0)
+    settings.lowBatteryThreshold = d;
+  else if (strcmp(settingName, "vinCorrectionFactor") == 0)
+    settings.vinCorrectionFactor = d;
   else
   {
     Serial.print("Unknown setting: ");

@@ -57,15 +57,19 @@ void menuLogRate()
     if (settings.useGPIO32ForStopLogging == true) Serial.println("Yes");
     else Serial.println("No");
 
+    Serial.print(F("10) Frequent log file access timestamps: "));
+    if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
     Serial.println(F("x) Exit"));
 
-    byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
+    int incoming = getNumber(menuTimeout); //Timeout after x seconds
 
-    if (incoming == '1')
+    if (incoming == 1)
       settings.logData ^= 1;
-    else if (incoming == '2')
+    else if (incoming == 2)
       settings.enableTerminalOutput ^= 1;
-    else if (incoming == '3')
+    else if (incoming == 3)
     {
       Serial.print(F("Enter baud rate (1200 to 500000): "));
       int newBaud = getNumber(menuTimeout); //Timeout after x seconds
@@ -81,7 +85,7 @@ void menuLogRate()
         while (1);
       }
     }
-    else if (incoming == '4')
+    else if (incoming == 4)
     {
       float rateLimit = 1.0 / (((float)settings.sensor_uBlox.minMeasIntervalGPS) / 1000.0);
       int maxOutputRate = (int)rateLimit;
@@ -96,7 +100,7 @@ void menuLogRate()
       gnssSettingsChanged = true; //Mark gnss settings as changed so it will be started with new settings
       //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
     }
-    else if (incoming == '5')
+    else if (incoming == 5)
     {
       Serial.println(F("How many seconds between readings? (1 to 129,600):"));
       uint64_t tempSeconds = getNumber(menuTimeout); //Timeout after x seconds
@@ -109,7 +113,7 @@ void menuLogRate()
       gnssSettingsChanged = true; //Mark gnss settings as changed so it will be started with new settings
       //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
     }
-    else if (incoming == '6')
+    else if (incoming == 6)
     {
       uint64_t secsBetweenReads = settings.usBetweenReadings / 1000000ULL;
       if (secsBetweenReads < 5) secsBetweenReads = 5; //Let's be sensible about this. The module will take ~2 secs to do a hot start anyway.
@@ -120,7 +124,7 @@ void menuLogRate()
       else
         settings.usLoggingDuration = 1000000ULL * tempSeconds;
     }
-    else if (incoming == '7')
+    else if (incoming == 7)
     {
       //The Deep Sleep duration is set with am_hal_stimer_compare_delta_set, the duration of which is uint32_t
       //So the maximum we can sleep for is 2^32 / 32768 = 131072 seconds = 36.4 hours
@@ -132,9 +136,9 @@ void menuLogRate()
       else
         settings.usSleepDuration = 1000000ULL * tempSeconds;
     }
-    else if (incoming == '8')
+    else if (incoming == 8)
       settings.openNewLogFile ^= 1;
-    else if (incoming == '9')
+    else if (incoming == 9)
     {
       if (settings.useGPIO32ForStopLogging == true)
       {
@@ -153,9 +157,11 @@ void menuLogRate()
         stopLoggingSeen = false; // Make sure the flag is clear
       }
     }
-    else if (incoming == 'x')
+    else if (incoming == 10)
+      settings.frequentFileAccessTimestamps ^= 1;
+    else if (incoming == STATUS_PRESSED_X)
       return;
-    else if (incoming == STATUS_GETBYTE_TIMEOUT)
+    else if (incoming == STATUS_GETNUMBER_TIMEOUT)
       return;
     else
       printUnknown(incoming);

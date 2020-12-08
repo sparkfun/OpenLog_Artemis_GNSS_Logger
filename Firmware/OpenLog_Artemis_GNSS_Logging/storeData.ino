@@ -75,7 +75,7 @@ bool storeData(void)
   bool ret_val = true; //The return value
 
   if ((qwiicOnline.uBlox == false) || (qwiicAvailable.uBlox == false))
-    goto SD_WRITE; // uBlox is offline so let's not try to talk to it. But we will still try to save any remaining data to SD.
+    goto SD_WRITE; // u-blox is offline so let's not try to talk to it. But we will still try to save any remaining data to SD.
   
   //Check for new I2C data three times faster than usBetweenReadings to avoid pounding the I2C bus
   if ((micros() - lastReadTime) > (settings.usBetweenReadings / 3))
@@ -98,10 +98,10 @@ bool storeData(void)
       uint8_t lsb = qwiic.read();
       if (lsb == 0xFF)
       {
-        //I believe this is a Ublox bug. Device should never present an 0xFF.
+        //I believe this is a u-blox bug. Device should never present an 0xFF.
         if (settings.printMajorDebugMessages == true)
         {
-          Serial.println(F("storeData: Ublox bug, length lsb is 0xFF"));
+          Serial.println(F("storeData: u-blox bug, length lsb is 0xFF"));
         }
         if (PIN_LOGIC_DEBUG >= 0)
         {
@@ -180,8 +180,9 @@ bool storeData(void)
   
       //Limit to 32 bytes or whatever the buffer limit is for given platform
       uint16_t bytesToRead = bytesAvailable;
-      if (bytesToRead > I2C_BUFFER_LENGTH)
-        bytesToRead = I2C_BUFFER_LENGTH;
+      uint16_t maxTransaction = (uint16_t)(gpsSensor_ublox.getI2CTransactionSize());
+      if (bytesToRead > maxTransaction)
+        bytesToRead = maxTransaction;
   
     TRY_AGAIN:
   
@@ -451,7 +452,6 @@ bool storeData(void)
         SDpointer = 0; //Reset the SDpointer
         digitalWrite(PIN_STAT_LED, HIGH); //Flash the LED while writing
         gnssDataFile.write(SDbuffer, SDpacket); //Record the buffer to the card
-//        updateDataFileWrite(); //Update the file write time stamp
         digitalWrite(PIN_STAT_LED, LOW);
         keep_going = false; //Stop now that we have written one packet
       }
@@ -472,7 +472,8 @@ bool storeData(void)
         SDpointer = 0; //Reset the SDpointer
       }
       gnssDataFile.sync(); //sync the file system
-//      updateDataFileAccess(); //Update the file access time stamp
+      if (settings.frequentFileAccessTimestamps == true)
+        updateDataFileAccess(&gnssDataFile); // Update the file access time & date
       digitalWrite(PIN_STAT_LED, LOW);
     }
 

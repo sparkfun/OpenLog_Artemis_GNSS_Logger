@@ -1,12 +1,14 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: August 22st, 2020
-  Version: V1.2
+  Date: December 7th, 2020
+  Version: V1.3
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX
   messages from the u-blox F9 and M9 GNSS receivers.
   
+  The Board should be set to SparkFun Apollo3 \ SparkFun RedBoard Artemis ATP.
+
   Messages are streamed directly to SD in UBX format without being processed.
   The SD log files can be analysed afterwards with (e.g.) u-center or RTKLIB.
 
@@ -15,7 +17,6 @@
   You can disable this with menu 1 option 2.
   The message interval can be adjusted (menu 1 option 4 | 5).
   The minimum message interval is adjusted according to which module you have attached.
-  At high message rates, Galileo, BeiDou and GLONASS are automatically disabled if required.
   The logging duration and sleep duration can be adjusted (menu 1 option 6 & 7).
   If you want the logger to log continuously, set the sleep duration to zero.
   If you want the logger to open a new log file after sleeping, use menu 1 option 8.
@@ -33,6 +34,9 @@
   with options 90-93.
   You will only see messages which are available on your module. E.g. the RAWX message
   will be hidden if you do not have a HPG (ZED-F9P), TIM (ZED-F9T) or FTS module attached.
+  You can selectively enable/disable GPS, Galileo, BeiDou, GLONASS and QZSS.
+  For fast log rates, you may need to disable all constellations except GPS - but this is
+  module-dependent.
 
   If the OLA RTC has been synchronised to GNSS (UTC) time, the SD files will have correct
   created and modified time stamps.
@@ -68,9 +72,16 @@
   License: This code is public domain but you buy me a beer if you use this
   and we meet someday (Beerware license).
   Feel like supporting our work? Buy a board from SparkFun!
-  https://www.sparkfun.com/products/15793
+  https://www.sparkfun.com/products/16832
 
   Version history:
+  V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino (thank you @adamgarbo)
+          Added improved log file timestamping - same as the OLA
+          Add functionality to enable/disable GNSS constellations (thank you @adamgarbo)
+          Add low battery detection
+          Added support for NAV_DOP
+          Added support for NAV_ATT (on the ZED-F9R HPS module)
+          Removed the hard-coded key values. The code now uses the key definitions from u-blox_config_keys.h
   V1.2 :  Add delay to allow GPS to intialize on v10 hardware
           Unhid the debug menu
   V1.1 :  Upgrades to match v14 of the OpenLog Artemis
@@ -80,7 +91,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 2;
+const int FIRMWARE_VERSION_MINOR = 3;
 
 //Define the OLA board identifier:
 //  This is an int which is unique to this variant of the OLA and which allows us
@@ -90,7 +101,7 @@ const int FIRMWARE_VERSION_MINOR = 2;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x212
+#define OLA_IDENTIFIER 0x213 // This will appear as 531 (decimal) in OLA_GNSS_settings.cfg
 
 #include "settings.h"
 
@@ -102,12 +113,6 @@ const int FIRMWARE_VERSION_MINOR = 2;
 #define HARDWARE_VERSION_MINOR 0
 
 #if(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 4)
-const byte PIN_MICROSD_CHIP_SELECT = 10;
-const byte PIN_IMU_POWER = 22;
-#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 5)
-const byte PIN_MICROSD_CHIP_SELECT = 10;
-const byte PIN_IMU_POWER = 22;
-#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
 const byte PIN_MICROSD_CHIP_SELECT = 10;
 const byte PIN_IMU_POWER = 22;
 #elif(HARDWARE_VERSION_MAJOR == 1 && HARDWARE_VERSION_MINOR == 0)
@@ -176,13 +181,15 @@ SFE_UBLOX_GPS gpsSensor_ublox;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint64_t measurementStartTime; //Used to calc the elapsed time
 String beginSensorOutput;
-unsigned long lastReadTime = 0; //Used to delay between uBlox reads
+unsigned long lastReadTime = 0; //Used to delay between u-blox reads
 unsigned long lastDataLogSyncTime = 0; //Used to sync SD every half second
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool rtcHasBeenSyncd = false; //Flag to indicate if the RTC been sync'd to GNSS
 bool rtcNeedsSync = true; //Flag to indicate if the RTC needs to be sync'd (after sleep)
 bool gnssSettingsChanged = false; //Flag to indicate if the gnss settings have been changed
 volatile static bool stopLoggingSeen = false; //Flag to indicate if we should stop logging
+int lowBatteryReadings = 0; // Count how many times the battery voltage has read low
+const int lowBatteryReadingsLimit = 1000; // Don't declare the battery voltage low until we have had this many consecutive low readings (to reject sampling noise)
 
 struct minfoStructure // Structure to hold the GNSS module info
 {
@@ -197,8 +204,9 @@ struct minfoStructure // Structure to hold the GNSS module info
   bool UDR; //Untethered Dead Reckoning (NEO-M8U which does not support protocol 27)
   bool TIM; //Time sync (ZED-F9T) (Guess!)
   bool FTS; //Frequency and Time Sync
-  bool LAP; //Lane Accurate (ZED-F9R)
+  bool LAP; //Lane Accurate
   bool HDG; //Heading (ZED-F9H)
+  bool HPS; //High Precision Sensor Fusion (ZED-F9R)
 } minfo; //Module info
 
 // Custom UBX Packet for getModuleInfo and powerManagementTask
@@ -255,7 +263,12 @@ void setup() {
   }
 
   beginQwiic();
-  delay(250); // Allow extra time for the qwiic sensors to power up
+
+  for (int i = 0; i < 250; i++) // Allow extra time for the qwiic sensors to power up
+  {
+    checkBattery(); // Check for low battery
+    delay(1);
+  }
 
   analogReadResolution(14); //Increase from default of 10
 
@@ -275,7 +288,11 @@ void setup() {
   {
     // If we're not using the SD card, everything will have happened much qwicker than usual.
     // Allow extra time for the u-blox module to start. It seems to need 1sec total.
-    delay(750);
+    for (int i = 0; i < 750; i++)
+    {
+      checkBattery(); // Check for low battery
+      delay(1);
+    }
   }
 
   if (beginSensors() == true) Serial.println(beginSensorOutput); //159 - 865ms but varies based on number of devices attached
@@ -294,6 +311,8 @@ void setup() {
 
 void loop() {
   
+  checkBattery(); // Check for low battery
+
   if (Serial.available()) menuMain(); //Present user menu
 
   storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
@@ -344,6 +363,7 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     for (int i = 0; i < 10; i++) //Wait
     {
+      checkBattery(); // Check for low battery
       delay(1);
     }
 
@@ -352,6 +372,7 @@ void beginSD()
       Serial.println(F("SD init failed (first attempt). Trying again...\n"));
       for (int i = 0; i < 250; i++) //Give SD more time to power up, then try again
       {
+        checkBattery(); // Check for low battery
         delay(1);
       }
       if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
@@ -407,7 +428,7 @@ void beginDataLogging()
       return;
     }
 
-    updateDataFileCreate(); //Update the data file creation time stamp
+    updateDataFileCreate(&gnssDataFile); //Update the data file creation time stamp
 
     online.dataLogging = true;
   }
@@ -416,56 +437,26 @@ void beginDataLogging()
 
 }
 
-void updateDataFileCreate()
+void updateDataFileCreate(SdFile *dataFile)
 {
-  if (rtcHasBeenSyncd == true) //Update the create time stamp if the RTC is valid
+  //if (rtcHasBeenSyncd == true) //Update the create time stamp only if the RTC is valid
   {
     myRTC.getTime(); //Get the RTC time so we can use it to update the create time
     //Update the file create time
-    bool result = gnssDataFile.timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileCreate: gnssDataFile.timestamp T_CREATE returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_CREATE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
   }
 }
 
-void updateDataFileAccess()
+void updateDataFileAccess(SdFile *dataFile)
 {
-  if (rtcHasBeenSyncd == true) //Update the write and access time stamps if RTC is valid
+  //if (rtcHasBeenSyncd == true) //Update the write and access time stamps only if RTC is valid
   {
     myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
     //Update the file access time
-    bool result = gnssDataFile.timestamp(T_ACCESS, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_ACCESS returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_ACCESS, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
     //Update the file write time
-    result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
-    if (settings.printMinorDebugMessages == true)
-    {
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));
-      Serial.println(result);
-    }
+    dataFile->timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds);
   }
-}
-
-void updateDataFileWrite()  
-{ 
-  if (rtcHasBeenSyncd == true) //Update the write time stamp if RTC is valid  
-  { 
-    myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time 
-    //Update the file write time  
-    bool result = gnssDataFile.timestamp(T_WRITE, (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds); 
-    if (settings.printMinorDebugMessages == true) 
-    { 
-      Serial.print(F("updateDataFileAccess: gnssDataFile.timestamp T_WRITE returned "));  
-      Serial.println(result); 
-    } 
-  } 
 }
 
 void printUint64(uint64_t val)
