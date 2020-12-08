@@ -63,13 +63,16 @@ void menuConfigure_uBlox()
         if (settings.sensor_uBlox.logUBXNAVDOP == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("12) Log UBX-NAV-HPPOSECEF (High Precision Position Earth-Centered Earth-Fixed) : "));
-        if (settings.sensor_uBlox.logUBXNAVHPPOSECEF == true) Serial.println(F("Enabled"));
-        else Serial.println(F("Disabled"));
-
-        Serial.print(F("13) Log UBX-NAV-HPPOSLLH  (High Precision Position Lat/Lon/Height)             : "));
-        if (settings.sensor_uBlox.logUBXNAVHPPOSLLH == true) Serial.println(F("Enabled"));
-        else Serial.println(F("Disabled"));
+        if  (minfo.SPG == false)
+        {
+          Serial.print(F("12) Log UBX-NAV-HPPOSECEF (High Precision Position Earth-Centered Earth-Fixed) : "));
+          if (settings.sensor_uBlox.logUBXNAVHPPOSECEF == true) Serial.println(F("Enabled"));
+          else Serial.println(F("Disabled"));
+  
+          Serial.print(F("13) Log UBX-NAV-HPPOSLLH  (High Precision Position Lat/Lon/Height)             : "));
+          if (settings.sensor_uBlox.logUBXNAVHPPOSLLH == true) Serial.println(F("Enabled"));
+          else Serial.println(F("Disabled"));
+        }
 
         Serial.print(F("14) Log UBX-NAV-ODO       (Odometer)                                           : "));
         if (settings.sensor_uBlox.logUBXNAVODO == true) Serial.println(F("Enabled"));
@@ -175,9 +178,9 @@ void menuConfigure_uBlox()
         settings.sensor_uBlox.logUBXNAVCLOCK ^= 1;
       else if (incoming == 11)
         settings.sensor_uBlox.logUBXNAVDOP ^= 1;
-      else if (incoming == 12)
+      else if ((incoming == 12) && (minfo.SPG == false))
         settings.sensor_uBlox.logUBXNAVHPPOSECEF ^= 1;
-      else if (incoming == 13)
+      else if ((incoming == 13) && (minfo.SPG == false))
         settings.sensor_uBlox.logUBXNAVHPPOSLLH ^= 1;
       else if (incoming == 14)
         settings.sensor_uBlox.logUBXNAVODO ^= 1;

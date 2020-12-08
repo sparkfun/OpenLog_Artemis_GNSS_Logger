@@ -501,8 +501,6 @@ uint8_t enableMessages(uint16_t maxWait)
   uint8_t success = true;
   success &= gpsSensor_ublox.newCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_CLOCK_I2C, settings.sensor_uBlox.logUBXNAVCLOCK, VAL_LAYER_RAM); // CFG-MSGOUT-UBX_NAV_CLOCK_I2C (in RAM only)
   success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_DOP_I2C, settings.sensor_uBlox.logUBXNAVDOP); // CFG-MSGOUT-UBX_NAV_DOP_I2C
-  success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSECEF_I2C, settings.sensor_uBlox.logUBXNAVHPPOSECEF); // CFG-MSGOUT-UBX_NAV_HPPOSECEF_I2C
-  success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSLLH_I2C, settings.sensor_uBlox.logUBXNAVHPPOSLLH); // CFG-MSGOUT-UBX_NAV_HPPOSLLH_I2C
   success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_ODO_I2C, settings.sensor_uBlox.logUBXNAVODO); // CFG-MSGOUT-UBX_NAV_ODO_I2C
   success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_POSECEF_I2C, settings.sensor_uBlox.logUBXNAVPOSECEF); // CFG-MSGOUT-UBX_NAV_POSECEF_I2C
   success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_POSLLH_I2C, settings.sensor_uBlox.logUBXNAVPOSLLH); // CFG-MSGOUT-UBX_NAV_POSLLH_I2C
@@ -512,6 +510,11 @@ uint8_t enableMessages(uint16_t maxWait)
   success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_VELECEF_I2C, settings.sensor_uBlox.logUBXNAVVELECEF); // CFG-MSGOUT-UBX_NAV_VELECEF_I2C
   success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_VELNED_I2C, settings.sensor_uBlox.logUBXNAVVELNED); // CFG-MSGOUT-UBX_NAV_VELNED_I2C
   success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_RXM_SFRBX_I2C, settings.sensor_uBlox.logUBXRXMSFRBX); // CFG-MSGOUT-UBX_RXM_SFRBX_I2C
+  if (minfo.SPG == false)
+  {
+    success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSECEF_I2C, settings.sensor_uBlox.logUBXNAVHPPOSECEF); // CFG-MSGOUT-UBX_NAV_HPPOSECEF_I2C
+    success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSLLH_I2C, settings.sensor_uBlox.logUBXNAVHPPOSLLH); // CFG-MSGOUT-UBX_NAV_HPPOSLLH_I2C
+  }
   if ((minfo.HPG == true) || (minfo.HDG == true) || (minfo.ADR == true) || (minfo.LAP == true))
   {
     success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_RELPOSNED_I2C, settings.sensor_uBlox.logUBXNAVRELPOSNED); // CFG-MSGOUT-UBX_NAV_RELPOSNED_I2C

@@ -18,6 +18,7 @@ The OpenLog Artemis automatically scans, detects, configures, and logs various Q
 
 * [ZED-F9P](https://www.sparkfun.com/products/15136)
 * [ZED-F9P SMA](https://www.sparkfun.com/products/16481)
+* [ZED-F9R](https://www.sparkfun.com/products/16344)
 * [NEO-M9N](https://www.sparkfun.com/products/15712)
 * More boards are being added all the time!
 
@@ -41,7 +42,7 @@ The menus will let you configure:
   * UBX-RXM-SFRBX     (Broadcast Navigation Data Subframe)
   * UBX-TIM-TM2       (Time Mark Data)
 * If your module supports them, you can also log:
-  * UBX-NAV-ATT       (Attitude Solution)
+  * UBX-NAV-ATT       (Attitude Solution) (Currently only supported on the ZED-F9R)
   * UBX-NAV-RELPOSNED (Relative Position North/East/Down)
   * UBX-RXM-RAWX      (Multi-GNSS Raw Measurement)
 * Logging and sleep durations. Want to log RAWX data for 10 minutes once per day? You can absolutely do that!

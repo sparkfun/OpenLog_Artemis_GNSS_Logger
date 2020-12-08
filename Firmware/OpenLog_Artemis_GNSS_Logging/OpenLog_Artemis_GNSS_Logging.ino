@@ -73,10 +73,13 @@
   https://www.sparkfun.com/products/15793
 
   Version history:
-  V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino
+  V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino (thank you @adamgarbo)
           Added improved log file timestamping - same as the OLA
           Add functionality to enable/disable GNSS constellations (thank you @adamgarbo)
           Add low battery detection
+          Added support for NAV_DOP
+          Added support for NAV_ATT (on the ZED-F9R HPS module)
+          Removed the hard-coded key values. The code now uses the key definitions from u-blox_config_keys.h
   V1.2 :  Add delay to allow GPS to intialize on v10 hardware
           Unhid the debug menu
   V1.1 :  Upgrades to match v14 of the OpenLog Artemis
