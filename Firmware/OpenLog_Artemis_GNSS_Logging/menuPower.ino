@@ -25,6 +25,8 @@ void menuPower()
 
     Serial.print(F("5) VIN measurement correction factor: "));
     Serial.printf("%.3f\r\n", settings.vinCorrectionFactor);
+
+    Serial.println(F("6) Print battery voltage"));
 #endif
 
     Serial.println("x) Exit");
@@ -68,6 +70,15 @@ void menuPower()
         Serial.println(F("Error: Correction factor out of range"));
       else
         settings.vinCorrectionFactor = tempCF;
+    }
+    else if (incoming == '6')
+    {
+      for(int i = 0; i < 50; i++)
+      {
+        Serial.print(F("Battery Voltage (V): "));
+        Serial.printf("%.2f\r\n", readVIN()); // Read and print the battery voltage;
+        delay(100);
+      }
     }
 #endif
     else if (incoming == STATUS_GETBYTE_TIMEOUT)

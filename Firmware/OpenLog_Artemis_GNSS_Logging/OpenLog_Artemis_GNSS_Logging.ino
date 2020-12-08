@@ -189,7 +189,7 @@ bool rtcNeedsSync = true; //Flag to indicate if the RTC needs to be sync'd (afte
 bool gnssSettingsChanged = false; //Flag to indicate if the gnss settings have been changed
 volatile static bool stopLoggingSeen = false; //Flag to indicate if we should stop logging
 int lowBatteryReadings = 0; // Count how many times the battery voltage has read low
-const int lowBatteryReadingsLimit = 10; // Don't declare the battery voltage low until we have had this many consecutive low readings (to reject sampling noise)
+const int lowBatteryReadingsLimit = 1000; // Don't declare the battery voltage low until we have had this many consecutive low readings (to reject sampling noise)
 
 struct minfoStructure // Structure to hold the GNSS module info
 {
