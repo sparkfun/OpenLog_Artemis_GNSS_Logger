@@ -27,6 +27,7 @@ The menus will let you configure:
 
 * Which messages are logged. You can currently select from:
   * UBX-NAV-CLOCK     (Clock Solution)
+  * UBX-NAV-DOP       (Dilution Of Precision)
   * UBX-NAV-HPPOSECEF (High Precision Position Earth-Centered Earth-Fixed)
   * UBX-NAV-HPPOSLLH  (High Precision Position Lat/Lon/Height)
   * UBX-NAV-ODO       (Odometer)
@@ -40,6 +41,7 @@ The menus will let you configure:
   * UBX-RXM-SFRBX     (Broadcast Navigation Data Subframe)
   * UBX-TIM-TM2       (Time Mark Data)
 * If your module supports them, you can also log:
+  * UBX-NAV-ATT       (Attitude Solution)
   * UBX-NAV-RELPOSNED (Relative Position North/East/Down)
   * UBX-RXM-RAWX      (Multi-GNSS Raw Measurement)
 * Logging and sleep durations. Want to log RAWX data for 10 minutes once per day? You can absolutely do that!
