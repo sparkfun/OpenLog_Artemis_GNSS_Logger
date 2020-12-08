@@ -434,7 +434,7 @@ void beginDataLogging()
 
 void updateDataFileCreate(SdFile *dataFile)
 {
-  if (rtcHasBeenSyncd == true) //Update the create time stamp if the RTC is valid
+  //if (rtcHasBeenSyncd == true) //Update the create time stamp only if the RTC is valid
   {
     myRTC.getTime(); //Get the RTC time so we can use it to update the create time
     //Update the file create time
@@ -444,7 +444,7 @@ void updateDataFileCreate(SdFile *dataFile)
 
 void updateDataFileAccess(SdFile *dataFile)
 {
-  if (rtcHasBeenSyncd == true) //Update the write and access time stamps if RTC is valid
+  //if (rtcHasBeenSyncd == true) //Update the write and access time stamps only if RTC is valid
   {
     myRTC.getTime(); //Get the RTC time so we can use it to update the last modified time
     //Update the file access time

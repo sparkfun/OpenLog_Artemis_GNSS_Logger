@@ -59,48 +59,48 @@ void menuConfigure_uBlox()
         if (settings.sensor_uBlox.logUBXNAVCLOCK == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("11) Log UBX-NAV-HPPOSECEF (High Precision Position Earth-Centered Earth-Fixed) : "));
+        Serial.print(F("11) Log UBX-NAV-DOP       (Velocity Solution North/East/Down)                  : "));
+        if (settings.sensor_uBlox.logUBXNAVDOP == true) Serial.println(F("Enabled"));
+        else Serial.println(F("Disabled"));
+
+        Serial.print(F("12) Log UBX-NAV-HPPOSECEF (High Precision Position Earth-Centered Earth-Fixed) : "));
         if (settings.sensor_uBlox.logUBXNAVHPPOSECEF == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("12) Log UBX-NAV-HPPOSLLH  (High Precision Position Lat/Lon/Height)             : "));
+        Serial.print(F("13) Log UBX-NAV-HPPOSLLH  (High Precision Position Lat/Lon/Height)             : "));
         if (settings.sensor_uBlox.logUBXNAVHPPOSLLH == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("13) Log UBX-NAV-ODO       (Odometer)                                           : "));
+        Serial.print(F("14) Log UBX-NAV-ODO       (Odometer)                                           : "));
         if (settings.sensor_uBlox.logUBXNAVODO == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("14) Log UBX-NAV-POSECEF   (Position Earth-Centered Earth-Fixed)                : "));
+        Serial.print(F("15) Log UBX-NAV-POSECEF   (Position Earth-Centered Earth-Fixed)                : "));
         if (settings.sensor_uBlox.logUBXNAVPOSECEF == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("15) Log UBX-NAV-POSLLH    (Position Lat/Lon/Height)                            : "));
+        Serial.print(F("16) Log UBX-NAV-POSLLH    (Position Lat/Lon/Height)                            : "));
         if (settings.sensor_uBlox.logUBXNAVPOSLLH == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("16) Log UBX-NAV-PVT       (Position, Velocity, Time)                           : "));
+        Serial.print(F("17) Log UBX-NAV-PVT       (Position, Velocity, Time)                           : "));
         if (settings.sensor_uBlox.logUBXNAVPVT == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("17) Log UBX-NAV-STATUS    (Receiver Navigation Status)                         : "));
+        Serial.print(F("18) Log UBX-NAV-STATUS    (Receiver Navigation Status)                         : "));
         if (settings.sensor_uBlox.logUBXNAVSTATUS == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("18) Log UBX-NAV-TIMEUTC   (UTC Time Solution) (** Used to sync the OLA RTC **) : "));
+        Serial.print(F("19) Log UBX-NAV-TIMEUTC   (UTC Time Solution) (** Used to sync the OLA RTC **) : "));
         if (settings.sensor_uBlox.logUBXNAVTIMEUTC == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("19) Log UBX-NAV-VELECEF   (Velocity Solution Earth-Centered Earth-Fixed)       : "));
+        Serial.print(F("20) Log UBX-NAV-VELECEF   (Velocity Solution Earth-Centered Earth-Fixed)       : "));
         if (settings.sensor_uBlox.logUBXNAVVELECEF == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("20) Log UBX-NAV-VELNED    (Velocity Solution North/East/Down)                  : "));
+        Serial.print(F("21) Log UBX-NAV-VELNED    (Velocity Solution North/East/Down)                  : "));
         if (settings.sensor_uBlox.logUBXNAVVELNED == true) Serial.println(F("Enabled"));
-        else Serial.println(F("Disabled"));
-
-        Serial.print(F("21) Log UBX-NAV-DOP       (Velocity Solution North/East/Down)                  : "));
-        if (settings.sensor_uBlox.logUBXNAVDOP == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
         Serial.print(F("30) Log UBX-RXM-SFRBX     (Broadcast Navigation Data Subframe)                 : "));
@@ -174,27 +174,27 @@ void menuConfigure_uBlox()
       if (incoming == 10)
         settings.sensor_uBlox.logUBXNAVCLOCK ^= 1;
       else if (incoming == 11)
-        settings.sensor_uBlox.logUBXNAVHPPOSECEF ^= 1;
-      else if (incoming == 12)
-        settings.sensor_uBlox.logUBXNAVHPPOSLLH ^= 1;
-      else if (incoming == 13)
-        settings.sensor_uBlox.logUBXNAVODO ^= 1;
-      else if (incoming == 14)
-        settings.sensor_uBlox.logUBXNAVPOSECEF ^= 1;
-      else if (incoming == 15)
-        settings.sensor_uBlox.logUBXNAVPOSLLH ^= 1;
-      else if (incoming == 16)
-        settings.sensor_uBlox.logUBXNAVPVT ^= 1;
-      else if (incoming == 17)
-        settings.sensor_uBlox.logUBXNAVSTATUS ^= 1;
-      else if (incoming == 18)
-        settings.sensor_uBlox.logUBXNAVTIMEUTC ^= 1;
-      else if (incoming == 19)
-        settings.sensor_uBlox.logUBXNAVVELECEF ^= 1;
-      else if (incoming == 20)
-        settings.sensor_uBlox.logUBXNAVVELNED ^= 1;
-      else if (incoming == 21)
         settings.sensor_uBlox.logUBXNAVDOP ^= 1;
+      else if (incoming == 12)
+        settings.sensor_uBlox.logUBXNAVHPPOSECEF ^= 1;
+      else if (incoming == 13)
+        settings.sensor_uBlox.logUBXNAVHPPOSLLH ^= 1;
+      else if (incoming == 14)
+        settings.sensor_uBlox.logUBXNAVODO ^= 1;
+      else if (incoming == 15)
+        settings.sensor_uBlox.logUBXNAVPOSECEF ^= 1;
+      else if (incoming == 16)
+        settings.sensor_uBlox.logUBXNAVPOSLLH ^= 1;
+      else if (incoming == 17)
+        settings.sensor_uBlox.logUBXNAVPVT ^= 1;
+      else if (incoming == 18)
+        settings.sensor_uBlox.logUBXNAVSTATUS ^= 1;
+      else if (incoming == 19)
+        settings.sensor_uBlox.logUBXNAVTIMEUTC ^= 1;
+      else if (incoming == 20)
+        settings.sensor_uBlox.logUBXNAVVELECEF ^= 1;
+      else if (incoming == 21)
+        settings.sensor_uBlox.logUBXNAVVELNED ^= 1;
       else if (incoming == 30)
         settings.sensor_uBlox.logUBXRXMSFRBX ^= 1;
       else if (incoming == 40)
