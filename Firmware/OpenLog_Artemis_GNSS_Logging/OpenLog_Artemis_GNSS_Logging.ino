@@ -17,7 +17,6 @@
   You can disable this with menu 1 option 2.
   The message interval can be adjusted (menu 1 option 4 | 5).
   The minimum message interval is adjusted according to which module you have attached.
-  At high message rates, Galileo, BeiDou and GLONASS are automatically disabled if required.
   The logging duration and sleep duration can be adjusted (menu 1 option 6 & 7).
   If you want the logger to log continuously, set the sleep duration to zero.
   If you want the logger to open a new log file after sleeping, use menu 1 option 8.
@@ -35,6 +34,9 @@
   with options 90-93.
   You will only see messages which are available on your module. E.g. the RAWX message
   will be hidden if you do not have a HPG (ZED-F9P), TIM (ZED-F9T) or FTS module attached.
+  You can selectively enable/disable GPS, Galileo, BeiDou, GLONASS and QZSS.
+  For fast log rates, you may need to disable all constellations except GPS - but this is
+  module-dependent.
 
   If the OLA RTC has been synchronised to GNSS (UTC) time, the SD files will have correct
   created and modified time stamps.
