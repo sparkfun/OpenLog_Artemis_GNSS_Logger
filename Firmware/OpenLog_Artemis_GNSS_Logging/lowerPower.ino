@@ -247,10 +247,10 @@ void goToSleep()
 
   //We can't leave these power control pins floating
   imuPowerOff();
-  //microSDPowerOff();
+  microSDPowerOff();
 
   //Testing file record issues
-  microSDPowerOn();
+  //microSDPowerOn();
 
   //Keep Qwiic bus powered on if user desires it
   if (settings.powerDownQwiicBusBetweenReads == true)
