@@ -20,8 +20,9 @@ void menuConfigure_uBlox()
       if (minfo.UDR) Serial.print(F(" UDR")); //Untethered Dead Reckoning
       if (minfo.TIM) Serial.print(F(" TIM")); //Time sync (ZED-F9T)
       if (minfo.FTS) Serial.print(F(" FTS")); //Frequency and time sync
-      if (minfo.LAP) Serial.print(F(" LAP")); //Lane accurate (ZED-F9R)
+      if (minfo.LAP) Serial.print(F(" LAP")); //Lane accurate
       if (minfo.HDG) Serial.print(F(" HDG")); //Heading (ZED-F9H)
+      if (minfo.HPS) Serial.print(F(" HPS")); //High Precision Sensor Fusion (ZED-F9R)
       Serial.println();
 
       Serial.print(F(" 1) Sensor Logging                                                             : "));
@@ -98,6 +99,10 @@ void menuConfigure_uBlox()
         if (settings.sensor_uBlox.logUBXNAVVELNED == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
+        Serial.print(F("21) Log UBX-NAV-DOP       (Velocity Solution North/East/Down)                  : "));
+        if (settings.sensor_uBlox.logUBXNAVDOP == true) Serial.println(F("Enabled"));
+        else Serial.println(F("Disabled"));
+
         Serial.print(F("30) Log UBX-RXM-SFRBX     (Broadcast Navigation Data Subframe)                 : "));
         if (settings.sensor_uBlox.logUBXRXMSFRBX == true) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
@@ -116,6 +121,12 @@ void menuConfigure_uBlox()
         {
           Serial.print(F("60) Log UBX-RXM-RAWX      (Multi-GNSS Raw Measurement)                         : "));
           if (settings.sensor_uBlox.logUBXRXMRAWX == true) Serial.println(F("Enabled"));
+          else Serial.println(F("Disabled"));
+        }
+        if ((minfo.HPS == true))
+        {
+          Serial.print(F("70) Log UBX-NAV-ATT       (Attitude Solution)                                  : "));
+          if (settings.sensor_uBlox.logUBXNAVATT == true) Serial.println(F("Enabled"));
           else Serial.println(F("Disabled"));
         }
 
@@ -182,6 +193,8 @@ void menuConfigure_uBlox()
         settings.sensor_uBlox.logUBXNAVVELECEF ^= 1;
       else if (incoming == 20)
         settings.sensor_uBlox.logUBXNAVVELNED ^= 1;
+      else if (incoming == 21)
+        settings.sensor_uBlox.logUBXNAVDOP ^= 1;
       else if (incoming == 30)
         settings.sensor_uBlox.logUBXRXMSFRBX ^= 1;
       else if (incoming == 40)
@@ -190,6 +203,8 @@ void menuConfigure_uBlox()
         settings.sensor_uBlox.logUBXNAVRELPOSNED ^= 1;
       else if ((incoming == 60) && ((minfo.HPG == true) || (minfo.TIM == true) || (minfo.FTS == true)))
         settings.sensor_uBlox.logUBXRXMRAWX ^= 1;
+      else if ((incoming == 70) && ((minfo.HPS == true)))
+        settings.sensor_uBlox.logUBXNAVATT ^= 1;
       else if (incoming == 90)
         settings.sensor_uBlox.enableUSB ^= 1;
       else if (incoming == 91)

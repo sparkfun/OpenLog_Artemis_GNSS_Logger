@@ -40,6 +40,7 @@ bool getModuleInfo(uint16_t maxWait)
   minfo.FTS = false;
   minfo.LAP = false;
   minfo.HDG = false;
+  minfo.HPS = false;
   
   char extension[30];
   extension[0] = 0;
@@ -83,6 +84,7 @@ bool getModuleInfo(uint16_t maxWait)
         else if (fwver_str == "FTS") minfo.FTS = true;
         else if (fwver_str == "LAP") minfo.LAP = true;
         else if (fwver_str == "HDG") minfo.HDG = true;
+        else if (fwver_str == "HPS") minfo.HPS = true;
         if (settings.printMajorDebugMessages == true)
         {
           Serial.print(F("getModuleInfo: "));

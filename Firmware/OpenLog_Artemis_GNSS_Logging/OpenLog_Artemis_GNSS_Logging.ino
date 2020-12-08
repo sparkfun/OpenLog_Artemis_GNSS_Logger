@@ -196,8 +196,9 @@ struct minfoStructure // Structure to hold the GNSS module info
   bool UDR; //Untethered Dead Reckoning (NEO-M8U which does not support protocol 27)
   bool TIM; //Time sync (ZED-F9T) (Guess!)
   bool FTS; //Frequency and Time Sync
-  bool LAP; //Lane Accurate (ZED-F9R)
+  bool LAP; //Lane Accurate
   bool HDG; //Heading (ZED-F9H)
+  bool HPS; //High Precision Sensor Fusion (ZED-F9R)
 } minfo; //Module info
 
 // Custom UBX Packet for getModuleInfo and powerManagementTask

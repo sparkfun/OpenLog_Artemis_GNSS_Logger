@@ -188,6 +188,12 @@ bool processUBX(char c)
                 case UBX_NAV_VELNED:
                   Serial.print(F(" NAV-VELNED"));
                 break;                
+                case UBX_NAV_DOP:
+                  Serial.print(F(" NAV-DOP"));
+                break;                
+                case UBX_NAV_ATT:
+                  Serial.print(F(" NAV-ATT"));
+                break;                
               }
             }
             break;
