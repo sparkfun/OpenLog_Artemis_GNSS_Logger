@@ -72,7 +72,7 @@
   License: This code is public domain but you buy me a beer if you use this
   and we meet someday (Beerware license).
   Feel like supporting our work? Buy a board from SparkFun!
-  https://www.sparkfun.com/products/15793
+  https://www.sparkfun.com/products/16832
 
   Version history:
   V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino (thank you @adamgarbo)
