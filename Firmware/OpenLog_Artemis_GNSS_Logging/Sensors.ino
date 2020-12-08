@@ -297,7 +297,11 @@ bool detectQwiicDevices()
 
   //Depending on what hardware is configured, the Qwiic bus may have only been turned on a few ms ago
   //Give sensors, specifically those with a low I2C address, time to turn on
-  delay(750); // ZED-F9P requries ~1s to turn on (commented by PaulZC - we always wait for 250ms after turning on the Qwiic power)
+  for (int i = 0; i < 750; i++) // ZED-F9P requries ~1s to turn on
+  {
+    checkBattery(); // Check for low battery
+    delay(1);
+  }
 
   uint8_t address = settings.sensor_uBlox.ubloxI2Caddress;
   
@@ -444,6 +448,7 @@ void resetGNSS()
       {
         for (int j = 0; j < 1000; j++)
         {
+          checkBattery(); // Check for low battery
           delay(1);
         }
         Serial.print(F("."));
@@ -603,4 +608,18 @@ void determineMaxI2CSpeed()
     maxSpeed = settings.qwiicBusMaxSpeed;
 
   qwiic.setClock(maxSpeed);
+}
+
+//Read the VIN voltage
+float readVIN()
+{
+  // Only supported on >= V10 hardware
+#if(HARDWARE_VERSION_MAJOR == 0)
+  return(0.0); // Return 0.0V on old hardware
+#else
+  int div3 = analogRead(PIN_VIN_MONITOR); //Read VIN across a 1/3 resistor divider
+  float vin = (float)div3 * 3.0 * 2.0 / 16384.0; //Convert 1/3 VIN to VIN (14-bit resolution)
+  vin = vin * settings.vinCorrectionFactor; //Correct for divider impedance (determined experimentally)
+  return (vin);
+#endif
 }

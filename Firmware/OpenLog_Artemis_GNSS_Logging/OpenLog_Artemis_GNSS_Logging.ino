@@ -76,6 +76,7 @@
   V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino
           Added improved log file timestamping - same as the OLA
           Add functionality to enable/disable GNSS constellations (thank you @adamgarbo)
+          Add low battery detection
   V1.2 :  Add delay to allow GPS to intialize on v10 hardware
           Unhid the debug menu
   V1.1 :  Upgrades to match v14 of the OpenLog Artemis
@@ -182,6 +183,8 @@ bool rtcHasBeenSyncd = false; //Flag to indicate if the RTC been sync'd to GNSS
 bool rtcNeedsSync = true; //Flag to indicate if the RTC needs to be sync'd (after sleep)
 bool gnssSettingsChanged = false; //Flag to indicate if the gnss settings have been changed
 volatile static bool stopLoggingSeen = false; //Flag to indicate if we should stop logging
+int lowBatteryReadings = 0; // Count how many times the battery voltage has read low
+const int lowBatteryReadingsLimit = 10; // Don't declare the battery voltage low until we have had this many consecutive low readings (to reject sampling noise)
 
 struct minfoStructure // Structure to hold the GNSS module info
 {
@@ -255,7 +258,12 @@ void setup() {
   }
 
   beginQwiic();
-  delay(250); // Allow extra time for the qwiic sensors to power up
+
+  for (int i = 0; i < 250; i++) // Allow extra time for the qwiic sensors to power up
+  {
+    checkBattery(); // Check for low battery
+    delay(1);
+  }
 
   analogReadResolution(14); //Increase from default of 10
 
@@ -275,7 +283,11 @@ void setup() {
   {
     // If we're not using the SD card, everything will have happened much qwicker than usual.
     // Allow extra time for the u-blox module to start. It seems to need 1sec total.
-    delay(750);
+    for (int i = 0; i < 750; i++)
+    {
+      checkBattery(); // Check for low battery
+      delay(1);
+    }
   }
 
   if (beginSensors() == true) Serial.println(beginSensorOutput); //159 - 865ms but varies based on number of devices attached
@@ -294,6 +306,8 @@ void setup() {
 
 void loop() {
   
+  checkBattery(); // Check for low battery
+
   if (Serial.available()) menuMain(); //Present user menu
 
   storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
@@ -344,6 +358,7 @@ void beginSD()
     //Max current is 200mA average across 1s, peak 300mA
     for (int i = 0; i < 10; i++) //Wait
     {
+      checkBattery(); // Check for low battery
       delay(1);
     }
 
@@ -352,6 +367,7 @@ void beginSD()
       Serial.println(F("SD init failed (first attempt). Trying again...\n"));
       for (int i = 0; i < 250; i++) //Give SD more time to power up, then try again
       {
+        checkBattery(); // Check for low battery
         delay(1);
       }
       if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
