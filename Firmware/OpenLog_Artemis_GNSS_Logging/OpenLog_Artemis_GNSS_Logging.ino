@@ -1,11 +1,16 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: December 7th, 2020
-  Version: V1.3
+  Date: July 17th, 2021
+  Version: V2.0
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX
   messages from the u-blox F9 and M9 GNSS receivers.
+
+  This version uses v2.1.0 of the SparkFun Apollo3 (artemis) core.
+  
+  Please note: v2.1.1 of the core contains a change to the I2C interface which makes communication
+  with the ZED-F9P less reliable. If you are building this code yourself, please use V2.1.0 of the core.
   
   The Board should be set to SparkFun Apollo3 \ SparkFun RedBoard Artemis ATP.
 
@@ -75,6 +80,7 @@
   https://www.sparkfun.com/products/16832
 
   Version history:
+  V2.0 :  Update using v2.1.0 of the SparkFun Apollo3 (Artemis) core and v2.0.9 of the SparkFun u-blox GNSS library
   V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino (thank you @adamgarbo)
           Added improved log file timestamping - same as the OLA
           Add functionality to enable/disable GNSS constellations (thank you @adamgarbo)
@@ -90,8 +96,8 @@
 
 */
 
-const int FIRMWARE_VERSION_MAJOR = 1;
-const int FIRMWARE_VERSION_MINOR = 3;
+const int FIRMWARE_VERSION_MAJOR = 2;
+const int FIRMWARE_VERSION_MINOR = 0;
 
 //Define the OLA board identifier:
 //  This is an int which is unique to this variant of the OLA and which allows us
@@ -101,7 +107,7 @@ const int FIRMWARE_VERSION_MINOR = 3;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x213 // This will appear as 531 (decimal) in OLA_GNSS_settings.cfg
+#define OLA_IDENTIFIER 0x220 // This will appear as 544 (decimal) in OLA_GNSS_settings.cfg
 
 #include "settings.h"
 
@@ -131,6 +137,11 @@ const byte PIN_STAT_LED = 19;
 const byte PIN_IMU_INT = 37;
 const byte PIN_IMU_CHIP_SELECT = 44;
 const byte PIN_STOP_LOGGING = 32;
+const byte PIN_QWIIC_SCL = 8;
+const byte PIN_QWIIC_SDA = 9;
+const byte PIN_SPI_SCK = 5;
+const byte PIN_SPI_CIPO = 6;
+const byte PIN_SPI_COPI = 7;
 
 enum returnStatus {
   STATUS_GETBYTE_TIMEOUT = 255,
@@ -141,7 +152,7 @@ enum returnStatus {
 //Setup Qwiic Port
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>
-TwoWire qwiic(1); //Will use pads 8/9
+TwoWire qwiic(PIN_QWIIC_SDA,PIN_QWIIC_SCL); //Will use pads 8/9
 #define QWIIC_PULLUPS 0 // Default to no pull-ups on the Qwiic bus to minimise u-blox bus errors
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -153,9 +164,25 @@ TwoWire qwiic(1); //Will use pads 8/9
 //microSD Interface
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
-#include <SdFat.h> //SdFat (FAT32) by Bill Greiman: http://librarymanager/All#SdFat
+
+#include <SdFat.h> //SdFat v2.0.7 by Bill Greiman: http://librarymanager/All#SdFat_exFAT
+
+#define SD_FAT_TYPE 3 // SD_FAT_TYPE = 0 for SdFat/File, 1 for FAT16/FAT32, 2 for exFAT, 3 for FAT16/FAT32 and exFAT.
+#define SD_CONFIG SdSpiConfig(PIN_MICROSD_CHIP_SELECT, SHARED_SPI, SD_SCK_MHZ(24)) // 24MHz
+
+#if SD_FAT_TYPE == 1
+SdFat32 sd;
+File32 gnssDataFile; //File that all incoming GNSS data is written to
+#elif SD_FAT_TYPE == 2
+SdExFat sd;
+ExFile gnssDataFile; //File that all incoming GNSS data is written to
+#elif SD_FAT_TYPE == 3
+SdFs sd;
+FsFile gnssDataFile; //File that all incoming GNSS data is written to
+#else // SD_FAT_TYPE == 0
 SdFat sd;
-SdFile gnssDataFile; //File that all GNSS data is written to
+File gnssDataFile; //File that all incoming GNSS data is written to
+#endif  // SD_FAT_TYPE
 
 char gnssDataFileName[30] = ""; //We keep a record of this file name so that we can re-open it upon wakeup from sleep
 const int sdPowerDownDelay = 100; //Delay for this many ms before turning off the SD card power
@@ -164,7 +191,7 @@ const int sdPowerDownDelay = 100; //Delay for this many ms before turning off th
 //Add RTC interface for Artemis
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include "RTC.h" //Include RTC library included with the Aruino_Apollo3 core
-APM3_RTC myRTC; //Create instance of RTC class
+Apollo3RTC myRTC; //Create instance of RTC class
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //Header files for all possible Qwiic sensors
@@ -172,8 +199,8 @@ APM3_RTC myRTC; //Create instance of RTC class
 
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 
-#include "SparkFun_Ublox_Arduino_Library.h" //http://librarymanager/All#SparkFun_Ublox_GPS
-SFE_UBLOX_GPS gpsSensor_ublox;
+#include "SparkFun_u-blox_GNSS_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
+SFE_UBLOX_GNSS gpsSensor_ublox;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -190,6 +217,7 @@ bool gnssSettingsChanged = false; //Flag to indicate if the gnss settings have b
 volatile static bool stopLoggingSeen = false; //Flag to indicate if we should stop logging
 int lowBatteryReadings = 0; // Count how many times the battery voltage has read low
 const int lowBatteryReadingsLimit = 1000; // Don't declare the battery voltage low until we have had this many consecutive low readings (to reject sampling noise)
+bool ignorePowerLossInterrupt = true; // Ignore the power loss interrupt - when attaching the interrupt
 
 struct minfoStructure // Structure to hold the GNSS module info
 {
@@ -227,7 +255,9 @@ void setup() {
   delay(1); // Let PIN_POWER_LOSS stabilize
 
   if (digitalRead(PIN_POWER_LOSS) == LOW) powerDown(); //Check PIN_POWER_LOSS just in case we missed the falling edge
+  ignorePowerLossInterrupt = true; // Ignore the power loss interrupt - when attaching the interrupt
   attachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS), powerDown, FALLING);
+  ignorePowerLossInterrupt = false;
 
   powerLEDOn(); // Turn the power LED on - if the hardware supports it
   
@@ -243,15 +273,18 @@ void setup() {
   Serial.begin(115200); //Default for initial debug messages if necessary
   Serial.println();
 
+  EEPROM.init();
+
   SPI.begin(); //Needed if SD is disabled
 
   beginSD(); //285 - 293ms
-
+  
   loadSettings(); //50 - 250ms
 
   Serial.flush(); //Complete any previous prints
   Serial.begin(settings.serialTerminalBaudRate);
   Serial.printf("Artemis OpenLog GNSS v%d.%d\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+  Serial.flush();
 
   if (settings.useGPIO32ForStopLogging == true)
   {
@@ -259,7 +292,8 @@ void setup() {
     pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
     delay(1); // Let the pin stabilize
     attachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING), stopLoggingISR, FALLING); // Enable the interrupt
-    stopLoggingSeen = false; // Make sure the flag is clear
+    pinMode(PIN_STOP_LOGGING, INPUT_PULLUP); //Re-attach the pull-up (bug in v2.1.0 of the core)
+    stopLoggingSeen = false; // Make sure the flag is clear (attachInterrupt will trigger an immediate interrupt with v2.1.0 of the core)
   }
 
   beginQwiic();
@@ -346,7 +380,43 @@ void beginQwiic()
   pinMode(PIN_QWIIC_POWER, OUTPUT);
   qwiicPowerOn();
   qwiic.begin();
-  qwiic.setPullups(QWIIC_PULLUPS); //Just to make it really clear what pull-ups are being used, set pullups here.
+  setQwiicPullups(QWIIC_PULLUPS); //Just to make it really clear what pull-ups are being used, set pullups here.
+}
+
+void setQwiicPullups(uint32_t qwiicBusPullUps)
+{
+  //Change SCL and SDA pull-ups manually using pin_config
+  am_hal_gpio_pincfg_t sclPinCfg = g_AM_BSP_GPIO_IOM1_SCL;
+  am_hal_gpio_pincfg_t sdaPinCfg = g_AM_BSP_GPIO_IOM1_SDA;
+
+  if (qwiicBusPullUps == 0)
+  {
+    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE; // No pull-ups
+    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
+  }
+  else if (qwiicBusPullUps == 1)
+  {
+    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K; // Use 1K5 pull-ups
+    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
+  }
+  else if (qwiicBusPullUps == 6)
+  {
+    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K; // Use 6K pull-ups
+    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K;
+  }
+  else if (qwiicBusPullUps == 12)
+  {
+    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K; // Use 12K pull-ups
+    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K;
+  }
+  else
+  {
+    sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_24K; // Use 24K pull-ups
+    sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_24K;
+  }
+
+  pin_config(PinName(PIN_QWIIC_SCL), sclPinCfg);
+  pin_config(PinName(PIN_QWIIC_SDA), sdaPinCfg);
 }
 
 void beginSD()
@@ -437,7 +507,15 @@ void beginDataLogging()
 
 }
 
-void updateDataFileCreate(SdFile *dataFile)
+#if SD_FAT_TYPE == 1
+void updateDataFileCreate(File32 *dataFile)
+#elif SD_FAT_TYPE == 2
+void updateDataFileCreate(ExFile *dataFile)
+#elif SD_FAT_TYPE == 3
+void updateDataFileCreate(FsFile *dataFile)
+#else // SD_FAT_TYPE == 0
+void updateDataFileCreate(File *dataFile)
+#endif  // SD_FAT_TYPE
 {
   //if (rtcHasBeenSyncd == true) //Update the create time stamp only if the RTC is valid
   {
@@ -447,7 +525,15 @@ void updateDataFileCreate(SdFile *dataFile)
   }
 }
 
-void updateDataFileAccess(SdFile *dataFile)
+#if SD_FAT_TYPE == 1
+void updateDataFileAccess(File32 *dataFile)
+#elif SD_FAT_TYPE == 2
+void updateDataFileAccess(ExFile *dataFile)
+#elif SD_FAT_TYPE == 3
+void updateDataFileAccess(FsFile *dataFile)
+#else // SD_FAT_TYPE == 0
+void updateDataFileAccess(File *dataFile)
+#endif  // SD_FAT_TYPE
 {
   //if (rtcHasBeenSyncd == true) //Update the write and access time stamps only if RTC is valid
   {

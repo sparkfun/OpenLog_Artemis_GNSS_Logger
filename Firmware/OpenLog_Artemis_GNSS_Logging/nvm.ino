@@ -57,7 +57,15 @@ void recordSettingsToFile()
     if (sd.exists("OLA_GNSS_settings.cfg"))
       sd.remove("OLA_GNSS_settings.cfg");
 
-    SdFile settingsFile;
+    #if SD_FAT_TYPE == 1
+    File32 settingsFile;
+    #elif SD_FAT_TYPE == 2
+    ExFile settingsFile;
+    #elif SD_FAT_TYPE == 3
+    FsFile settingsFile;
+    #else // SD_FAT_TYPE == 0
+    File settingsFile;
+    #endif  // SD_FAT_TYPE
     if (settingsFile.open("OLA_GNSS_settings.cfg", O_CREAT | O_APPEND | O_WRITE) == false)
     {
       Serial.println("Failed to create settings file");
@@ -159,8 +167,8 @@ void recordSettingsToFile()
     settingsFile.println("useGPIO32ForStopLogging=" + (String)settings.useGPIO32ForStopLogging);
     settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
     settingsFile.println("enableLowBatteryDetection=" + (String)settings.enableLowBatteryDetection);
-    settingsFile.println("lowBatteryThreshold=" + (String)settings.lowBatteryThreshold);
-    settingsFile.println("vinCorrectionFactor=" + (String)settings.vinCorrectionFactor);
+    settingsFile.print("lowBatteryThreshold="); settingsFile.println(settings.lowBatteryThreshold);
+    settingsFile.print("vinCorrectionFactor="); settingsFile.println(settings.vinCorrectionFactor);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
     settingsFile.close();
@@ -177,7 +185,15 @@ bool loadSettingsFromFile()
   {
     if (sd.exists("OLA_GNSS_settings.cfg"))
     {
-      SdFile settingsFile;
+      #if SD_FAT_TYPE == 1
+      File32 settingsFile;
+      #elif SD_FAT_TYPE == 2
+      ExFile settingsFile;
+      #elif SD_FAT_TYPE == 3
+      FsFile settingsFile;
+      #else // SD_FAT_TYPE == 0
+      File settingsFile;
+      #endif  // SD_FAT_TYPE
       if (settingsFile.open("OLA_GNSS_settings.cfg", O_READ) == false)
       {
         Serial.println("Failed to open settings file");

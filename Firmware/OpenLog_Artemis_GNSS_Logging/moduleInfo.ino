@@ -9,6 +9,8 @@
 
 bool getModuleInfo(uint16_t maxWait)
 {
+  gpsSensor_ublox.setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE); //Work-around for large custom packets
+      
   // Referring to the u-blox M8 Receiver Description and Protocol Specification we see that
   // the module information can be read using the UBX-MON-VER message. So let's load our
   // custom packet with the correct information so we can read (poll / get) the module information.

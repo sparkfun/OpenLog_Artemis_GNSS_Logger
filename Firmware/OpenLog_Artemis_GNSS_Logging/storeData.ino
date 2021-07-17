@@ -365,7 +365,7 @@ bool storeData(void)
                       if (nanos.signed32 < 0)
                         nanos.signed32 = 0;
                       uint8_t centis = (uint8_t)(nanos.unsigned32 / 10000000); //Convert nanos to hundredths (centiseconds)
-                      myRTC.setTime(UBXbuffer[22], UBXbuffer[23], UBXbuffer[24], centis, UBXbuffer[21], UBXbuffer[20], (rtcYear - 2000)); //Set the RTC
+                      myRTC.setTime(centis, UBXbuffer[22], UBXbuffer[23], UBXbuffer[24], UBXbuffer[21], UBXbuffer[20], (rtcYear - 2000)); //Set the RTC
                       rtcHasBeenSyncd = true; //Set rtcHasBeenSyncd to show RTC has been sync'd
                       rtcNeedsSync = false; //Clear rtcNeedsSync so we don't set the RTC multiple times
                       if (settings.printMinorDebugMessages == true)

@@ -126,11 +126,14 @@ void menuConfigure_uBlox()
           if (settings.sensor_uBlox.logUBXRXMRAWX == true) Serial.println(F("Enabled"));
           else Serial.println(F("Disabled"));
         }
-        if ((minfo.HPS == true))
+        if ((minfo.HPS == true) || (minfo.ADR == true))
         {
           Serial.print(F("70) Log UBX-NAV-ATT       (Attitude Solution)                                  : "));
           if (settings.sensor_uBlox.logUBXNAVATT == true) Serial.println(F("Enabled"));
           else Serial.println(F("Disabled"));
+
+          //TO DO: Add ESF and HNR here...
+          
         }
 
         Serial.print(F("90) USB port              (Disable to reduce load on module)                   : "));
