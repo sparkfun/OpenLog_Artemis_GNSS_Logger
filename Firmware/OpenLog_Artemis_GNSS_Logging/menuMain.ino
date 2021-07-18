@@ -54,7 +54,7 @@ void menuMain()
       openNewLogFile();
     else if (incoming == 'g')
     {
-      Serial.println(F("\n\rResetting GNSS to factory defaults. Continue? Press 'y':"));
+      Serial.println(F("\r\nResetting GNSS to factory defaults. Continue? Press 'y':"));
       byte gContinue = getByteChoice(menuTimeout);
       if (gContinue == 'y')
       {
@@ -71,7 +71,7 @@ void menuMain()
       menuDebug(&prevPrintMajorDebugMessages, &prevPrintMinorDebugMessages);
     else if (incoming == 'r')
     {
-      Serial.println(F("\n\rResetting to factory defaults. Continue? Press 'y':"));
+      Serial.println(F("\r\nResetting settings to factory defaults. Continue? Press 'y':"));
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
@@ -89,7 +89,7 @@ void menuMain()
     }
     else if (incoming == 'q')
     {
-      Serial.println("\n\rQuit? Press 'y' to confirm:");
+      Serial.println("\r\nQuit? Press 'y' to confirm:");
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
@@ -111,7 +111,7 @@ void menuMain()
       printUnknown(incoming);
   }
 
-  Serial.println(F("\nReturning to logging..."));
+  Serial.println(F("\r\nReturning to logging..."));
   
   //Restore debug messages
   settings.printMajorDebugMessages = prevPrintMajorDebugMessages;
@@ -137,7 +137,7 @@ void menuConfigure_QwiicBus()
 
     Serial.print(F("1) Set Max Qwiic Bus Speed          : "));
     Serial.println(settings.qwiicBusMaxSpeed);
-#if(HARDWARE_VERSION_MAJOR >= 1) || (HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
+#if(HARDWARE_VERSION_MAJOR >= 1)
     Serial.print(F("2) Turn off bus power when sleeping : "));
     if (settings.powerDownQwiicBusBetweenReads == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
@@ -149,14 +149,12 @@ void menuConfigure_QwiicBus()
 
     if (incoming == '1')
     {
-      Serial.print(F("Enter max frequency to run Qwiic bus: (100000 to 400000): "));
-      int amt = getNumber(menuTimeout);
-      if (amt >= 100000 && amt <= 400000)
-        settings.qwiicBusMaxSpeed = amt;
+      if (settings.qwiicBusMaxSpeed == 100000)
+        settings.qwiicBusMaxSpeed = 400000;
       else
-        Serial.println(F("Error: Out of range"));
+        settings.qwiicBusMaxSpeed = 100000;
     }
-#if(HARDWARE_VERSION_MAJOR >= 1) || (HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
+#if(HARDWARE_VERSION_MAJOR >= 1)
     else if (incoming == '2')
       settings.powerDownQwiicBusBetweenReads ^= 1;
 #endif

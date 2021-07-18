@@ -310,7 +310,7 @@ bool detectQwiicDevices()
   {
     if (settings.printMinorDebugMessages == true)
     {
-      Serial.printf("Device found at address 0x%02X\n", address);
+      Serial.printf("Device found at address 0x%02X\r\n", address);
     }
     if (gpsSensor_ublox.begin(qwiic, address) == true) //Wire port, address
     {

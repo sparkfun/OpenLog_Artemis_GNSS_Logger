@@ -8,7 +8,7 @@ void menuConfigure_uBlox()
 
     if (qwiicOnline.uBlox == false)
     {
-      Serial.println(F("\n**No GNSS device detected on Qwiic bus**"));
+      Serial.println(F("\r\n**No GNSS device detected on Qwiic bus**"));
     }
     else
     {

@@ -365,14 +365,14 @@ bool storeData(void)
                       if (nanos.signed32 < 0)
                         nanos.signed32 = 0;
                       uint8_t centis = (uint8_t)(nanos.unsigned32 / 10000000); //Convert nanos to hundredths (centiseconds)
-                      myRTC.setTime(centis, UBXbuffer[22], UBXbuffer[23], UBXbuffer[24], UBXbuffer[21], UBXbuffer[20], (rtcYear - 2000)); //Set the RTC
+                      myRTC.setTime(centis, UBXbuffer[24], UBXbuffer[23], UBXbuffer[22], UBXbuffer[21], UBXbuffer[20], (rtcYear - 2000)); //Set the RTC
                       rtcHasBeenSyncd = true; //Set rtcHasBeenSyncd to show RTC has been sync'd
                       rtcNeedsSync = false; //Clear rtcNeedsSync so we don't set the RTC multiple times
                       if (settings.printMinorDebugMessages == true)
                       {
-                        Serial.printf("storeData: RTC sync'd to %04d/%02d/%02d %02d:%02d:%02d.%02d\n", rtcYear, UBXbuffer[20], UBXbuffer[21], UBXbuffer[22], UBXbuffer[23], UBXbuffer[24], centis);
+                        Serial.printf("storeData: RTC sync'd to %04d/%02d/%02d %02d:%02d:%02d.%02d\r\n", rtcYear, UBXbuffer[20], UBXbuffer[21], UBXbuffer[22], UBXbuffer[23], UBXbuffer[24], centis);
                         myRTC.getTime();
-                        Serial.printf("storeData: RTC time is   %04d/%02d/%02d %02d:%02d:%02d.%02d\n", (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
+                        Serial.printf("storeData: RTC time is   %04d/%02d/%02d %02d:%02d:%02d.%02d\r\n", (myRTC.year + 2000), myRTC.month, myRTC.dayOfMonth, myRTC.hour, myRTC.minute, myRTC.seconds, myRTC.hundredths);
                       }
                     }
                   }

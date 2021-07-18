@@ -246,7 +246,7 @@ ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALI
 
 //unsigned long startTime = 0;
 
-#define DUMP(varname) {Serial.printf("%s: %llu\n", #varname, varname);}
+#define DUMP(varname) {Serial.printf("%s: %d\r\n", #varname, varname);}
 
 void setup() {
   //If 3.3V rail drops below 3V, system will power down and maintain RTC
@@ -283,7 +283,7 @@ void setup() {
 
   Serial.flush(); //Complete any previous prints
   Serial.begin(settings.serialTerminalBaudRate);
-  Serial.printf("Artemis OpenLog GNSS v%d.%d\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
+  Serial.printf("Artemis OpenLog GNSS v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
   Serial.flush();
 
   if (settings.useGPIO32ForStopLogging == true)
@@ -439,7 +439,7 @@ void beginSD()
 
     if (sd.begin(PIN_MICROSD_CHIP_SELECT, SD_SCK_MHZ(24)) == false) //Standard SdFat
     {
-      Serial.println(F("SD init failed (first attempt). Trying again...\n"));
+      Serial.println(F("SD init failed (first attempt). Trying again...\r\n"));
       for (int i = 0; i < 250; i++) //Give SD more time to power up, then try again
       {
         checkBattery(); // Check for low battery

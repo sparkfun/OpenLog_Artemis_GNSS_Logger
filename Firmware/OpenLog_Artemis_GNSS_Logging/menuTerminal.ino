@@ -22,42 +22,42 @@ void menuLogRate()
     {
       //Display Integer Hertz
       int logRate = (int)(1000000ULL / settings.usBetweenReadings);
-      Serial.printf("%d\n", logRate);
+      Serial.printf("%d\r\n", logRate);
     }
     else
     {
       //Display fractional Hertz
       uint32_t logRateSeconds = (uint32_t)(settings.usBetweenReadings / 1000000ULL);
-      Serial.printf("%.06lf\n", 1.0 / logRateSeconds);
+      char tempStr[16];
+      olaftoa(1.0 / logRateSeconds, tempStr, 6, sizeof(tempStr) / sizeof(char));
+      Serial.printf("%s\r\n", tempStr);
     }
 
     Serial.print(F("5) Set Log Rate in seconds between readings               : "));
     if (settings.usBetweenReadings > 1000000ULL) //Take more than one measurement per second
     {
-        uint32_t interval = (uint32_t)(settings.usBetweenReadings / 1000000ULL);
-        Serial.printf("%d\n", interval);
+      uint32_t interval = (uint32_t)(settings.usBetweenReadings / 1000000ULL);
+      Serial.printf("%d\r\n", interval);
     }
     else
     {
-        float rate = (float)(settings.usBetweenReadings / 1000000.0);
-        Serial.printf("%.06f\n", rate);
+      float rate = (float)(settings.usBetweenReadings / 1000000.0);
+      char tempStr[16];
+      olaftoa(rate, tempStr, 6, sizeof(tempStr) / sizeof(char));
+      Serial.printf("%s\r\n", tempStr);
     }
     
     Serial.print(F("6) Set logging duration in seconds                        : "));
-    Serial.printf("%llu\n", settings.usLoggingDuration / 1000000ULL);
+    Serial.printf("%d\r\n", (uint32_t)(settings.usLoggingDuration / 1000000ULL));
 
     Serial.print(F("7) Set sleep duration in seconds (0 = continuous logging) : "));
-    Serial.printf("%llu\n", settings.usSleepDuration / 1000000ULL);
+    Serial.printf("%d\r\n", (uint32_t)(settings.usSleepDuration / 1000000ULL));
 
     Serial.print(F("8) Open new log file after sleep                          : "));
     if (settings.openNewLogFile == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
 
-    Serial.print(F("9) Use pin 32 to Stop Logging                             : "));
-    if (settings.useGPIO32ForStopLogging == true) Serial.println("Yes");
-    else Serial.println("No");
-
-    Serial.print(F("10) Frequent log file access timestamps: "));
+    Serial.print(F("9) Frequent log file access timestamps: "));
     if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
@@ -81,7 +81,7 @@ void menuLogRate()
       {
         settings.serialTerminalBaudRate = newBaud;
         recordSettings();
-        Serial.printf("Terminal now set at %dbps. Please reset device and open terminal at new baud rate. Freezing...\n", settings.serialTerminalBaudRate);
+        Serial.printf("Terminal now set at %dbps. Please reset device and open terminal at new baud rate. Freezing...\r\n", settings.serialTerminalBaudRate);
         while (1);
       }
     }
@@ -139,25 +139,6 @@ void menuLogRate()
     else if (incoming == 8)
       settings.openNewLogFile ^= 1;
     else if (incoming == 9)
-    {
-      if (settings.useGPIO32ForStopLogging == true)
-      {
-        // Disable stop logging
-        settings.useGPIO32ForStopLogging = false;
-        detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
-        pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
-      }
-      else
-      {
-        // Enable stop logging
-        settings.useGPIO32ForStopLogging = true;
-        pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
-        delay(1); // Let the pin stabilize
-        attachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING), stopLoggingISR, FALLING); // Enable the interrupt
-        stopLoggingSeen = false; // Make sure the flag is clear
-      }
-    }
-    else if (incoming == 10)
       settings.frequentFileAccessTimestamps ^= 1;
     else if (incoming == STATUS_PRESSED_X)
       return;

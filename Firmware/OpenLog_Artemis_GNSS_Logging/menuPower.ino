@@ -5,28 +5,33 @@ void menuPower()
     Serial.println();
     Serial.println("Menu: Configure Power Options");
 
-#if(HARDWARE_VERSION_MAJOR >= 1) || (HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
-    Serial.print("1) Turn off Qwiic bus power when sleeping: ");
+    Serial.print(F("1) Turn off Qwiic bus power when sleeping : "));
     if (settings.powerDownQwiicBusBetweenReads == true) Serial.println("Yes");
     else Serial.println("No");
-#endif
+
+    Serial.print(F("2) Use pin 32 to Stop Logging             : "));
+    if (settings.useGPIO32ForStopLogging == true) Serial.println("Yes");
+    else Serial.println("No");
 
 #if(HARDWARE_VERSION_MAJOR >= 1)
-    Serial.print("2) Power LED During Sleep: ");
+    Serial.print(F("3) Power LED During Sleep                 : "));
     if (settings.enablePwrLedDuringSleep == true) Serial.println("Enabled");
     else Serial.println("Disabled");
 
-    Serial.print(F("3) Low Battery Voltage Detection: "));
+    Serial.print(F("4) Low Battery Voltage Detection          : "));
     if (settings.enableLowBatteryDetection == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
+    else Serial.println(F("Disabled")); 
 
-    Serial.print(F("4) Low Battery Threshold (V): "));
-    Serial.printf("%.2f\r\n", settings.lowBatteryThreshold);
+    Serial.print(F("5) Low Battery Threshold (V)              : "));
+    char tempStr[16];
+    olaftoa(settings.lowBatteryThreshold, tempStr, 2, sizeof(tempStr) / sizeof(char));
+    Serial.printf("%s\r\n", tempStr);
 
-    Serial.print(F("5) VIN measurement correction factor: "));
-    Serial.printf("%.3f\r\n", settings.vinCorrectionFactor);
+    Serial.print(F("6) VIN measurement correction factor      : "));
+    olaftoa(settings.vinCorrectionFactor, tempStr, 3, sizeof(tempStr) / sizeof(char));
+    Serial.printf("%s\r\n", tempStr);
 
-    Serial.println(F("6) Print battery voltage"));
+    Serial.println(F("7) Print battery voltage"));
 #endif
 
     Serial.println("x) Exit");
@@ -35,22 +40,43 @@ void menuPower()
 
     if (incoming == 'x')
       break;
-#if(HARDWARE_VERSION_MAJOR >= 1) || (HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
     else if (incoming == '1')
     {
       settings.powerDownQwiicBusBetweenReads ^= 1;
     }
-#endif
-#if(HARDWARE_VERSION_MAJOR >= 1)
     else if (incoming == '2')
+    {
+      if (settings.useGPIO32ForStopLogging == true)
+      {
+        // Disable stop logging
+        settings.useGPIO32ForStopLogging = false;
+        detachInterrupt(PIN_STOP_LOGGING); // Disable the interrupt
+        pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
+        pin_config(PinName(PIN_STOP_LOGGING), g_AM_HAL_GPIO_INPUT); // Make sure the pin does actually get re-configured
+        stopLoggingSeen = false; // Make sure the flag is clear
+      }
+      else
+      {
+        // Enable stop logging
+        settings.useGPIO32ForStopLogging = true;
+        pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
+        pin_config(PinName(PIN_STOP_LOGGING), g_AM_HAL_GPIO_INPUT_PULLUP); // Make sure the pin does actually get re-configured
+        delay(1); // Let the pin stabilize
+        attachInterrupt(PIN_STOP_LOGGING, stopLoggingISR, FALLING); // Enable the interrupt
+        pinMode(PIN_STOP_LOGGING, INPUT_PULLUP); //Re-attach the pull-up (bug in v2.1.0 of the core)
+        stopLoggingSeen = false; // Make sure the flag is clear
+      }
+    }
+#if(HARDWARE_VERSION_MAJOR >= 1)
+    else if (incoming == '3')
     {
       settings.enablePwrLedDuringSleep ^= 1;
     }
-    else if (incoming == '3')
+    else if (incoming == '4')
     {
       settings.enableLowBatteryDetection ^= 1;
     }
-    else if (incoming == '4')
+    else if (incoming == '5')
     {
       Serial.println(F("Please enter the new low battery threshold:"));
       float tempBT = (float)getDouble(menuTimeout); //Timeout after x seconds
@@ -59,7 +85,7 @@ void menuPower()
       else
         settings.lowBatteryThreshold = tempBT;
     }
-    else if (incoming == '5')
+    else if (incoming == '6')
     {
       Serial.println(F("Please measure the voltage on the MEAS pin and enter it here:"));
       float tempCF = (float)getDouble(menuTimeout); //Timeout after x seconds
@@ -71,12 +97,14 @@ void menuPower()
       else
         settings.vinCorrectionFactor = tempCF;
     }
-    else if (incoming == '6')
+    else if (incoming == '7')
     {
       for(int i = 0; i < 50; i++)
       {
         Serial.print(F("Battery Voltage (V): "));
-        Serial.printf("%.2f\r\n", readVIN()); // Read and print the battery voltage;
+        char tempStr[16];
+        olaftoa(readVIN(), tempStr, 2, sizeof(tempStr) / sizeof(char));
+        Serial.printf("%s\r\n", tempStr); // Read and print the battery voltage;
         delay(100);
       }
     }
