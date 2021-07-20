@@ -16,6 +16,13 @@ bool beginSensors()
   if (qwiicAvailable.uBlox && settings.sensor_uBlox.log && ((!qwiicOnline.uBlox) || (gnssSettingsChanged == true))) // Only do this if the sensor is not online
   {
     gnssSettingsChanged = false;
+    gpsSensor_ublox.setFileBufferSize(FILE_BUFFER_SIZE); // setFileBufferSize must be called _before_ .begin
+    
+    gpsSensor_ublox.setPacketCfgPayloadSize(8192); // Needs to be large enough to hold a full RAWX frame
+
+    if (settings.printGNSSDebugMessages) //Enable debug messages if desired
+      gpsSensor_ublox.enableDebugging(Serial, !settings.printMinorDebugMessages);
+      
     if (gpsSensor_ublox.begin(qwiic, settings.sensor_uBlox.ubloxI2Caddress) == true) //Wire port, Address. Default is 0x42.
     {
       // Try up to three times to get the module info
@@ -72,209 +79,52 @@ bool beginSensors()
         Serial.println(minfo.mod);
       }
 
-      //Check the PROTVER is >= 27
-      if (minfo.protVerMajor < 27)
-      {
-        if (settings.printMajorDebugMessages == true)
-        {
-          Serial.print(F("beginSensors: module does not support the configuration interface. Aborting!"));
-        }
-        qwiicOnline.uBlox = false;
-        return(false);
-      }
-      
-      //Set the I2C port to output UBX only (turn off NMEA noise)
-      gpsSensor_ublox.newCfgValset8(UBLOX_CFG_I2COUTPROT_UBX, VAL_LAYER_RAM | VAL_LAYER_BBR); // CFG-I2COUTPROT-UBX : Enable UBX output on the I2C port (in RAM and BBR)
-      gpsSensor_ublox.addCfgValset8(UBLOX_CFG_I2COUTPROT_NMEA, 0); // CFG-I2COUTPROT-NMEA : Disable NMEA output on the I2C port
-      if (minfo.HPG == true)
-      {
-        gpsSensor_ublox.addCfgValset8(UBLOX_CFG_I2COUTPROT_RTCM3X, 0); // CFG-I2COUTPROT-RTCM3X : Disable RTCM3 output on the I2C port (Precision modules only)
-      }
-      uint8_t success = gpsSensor_ublox.sendCfgValset8(UBLOX_CFG_INFMSG_UBX_I2C, 0, 2100); // CFG-INFMSG-UBX_I2C : Disable UBX INFo messages on the I2C port (maxWait 2100ms)
-      if (success == 0)
+      //Disable all messages
+      disableMessages(1100);
+
+      //Check if any UBX messages are enabled
+      bool ubxRequired = true; // UBX is always required for ACK/NACK
+      //bool ubxRequired = settings.sensor_uBlox.logUBXNAVPOSECEF | settings.sensor_uBlox.logUBXNAVSTATUS | settings.sensor_uBlox.logUBXNAVDOP | settings.sensor_uBlox.logUBXNAVATT
+      //  | settings.sensor_uBlox.logUBXNAVPVT | settings.sensor_uBlox.logUBXNAVODO | settings.sensor_uBlox.logUBXNAVVELECEF | settings.sensor_uBlox.logUBXNAVVELNED
+      //  | settings.sensor_uBlox.logUBXNAVHPPOSECEF | settings.sensor_uBlox.logUBXNAVHPPOSLLH | settings.sensor_uBlox.logUBXNAVCLOCK
+      //  | settings.sensor_uBlox.logUBXNAVRELPOSNED | settings.sensor_uBlox.logUBXRXMSFRBX | settings.sensor_uBlox.logUBXRXMRAWX | settings.sensor_uBlox.logUBXTIMTM2
+      //  | settings.sensor_uBlox.logUBXESFMEAS | settings.sensor_uBlox.logUBXESFRAW | settings.sensor_uBlox.logUBXESFSTATUS | settings.sensor_uBlox.logUBXESFALG
+      //  | settings.sensor_uBlox.logUBXESFINS | settings.sensor_uBlox.logUBXHNRPVT | settings.sensor_uBlox.logUBXHNRATT | settings.sensor_uBlox.logUBXHNRINS;
+
+      //Check if any NMEA messaged are enabled
+      bool nmeaRequired = settings.sensor_uBlox.logNMEADTM | settings.sensor_uBlox.logNMEAGAQ | settings.sensor_uBlox.logNMEAGBQ | settings.sensor_uBlox.logNMEAGBS
+        | settings.sensor_uBlox.logNMEAGGA | settings.sensor_uBlox.logNMEAGLL | settings.sensor_uBlox.logNMEAGLQ | settings.sensor_uBlox.logNMEAGNQ | settings.sensor_uBlox.logNMEAGNS
+        | settings.sensor_uBlox.logNMEAGPQ | settings.sensor_uBlox.logNMEAGQQ | settings.sensor_uBlox.logNMEAGRS | settings.sensor_uBlox.logNMEAGSA | settings.sensor_uBlox.logNMEAGST
+        | settings.sensor_uBlox.logNMEAGSV | settings.sensor_uBlox.logNMEARLM | settings.sensor_uBlox.logNMEARMC | settings.sensor_uBlox.logNMEATXT | settings.sensor_uBlox.logNMEAVLW
+        | settings.sensor_uBlox.logNMEAVTG | settings.sensor_uBlox.logNMEAZDA;
+
+      //Set the I2C port to output the required protocols
+      uint8_t requiredProtocols = 0;
+      if (ubxRequired)
+        requiredProtocols |= COM_TYPE_UBX;
+      if (nmeaRequired)
+        requiredProtocols |= COM_TYPE_NMEA;
+      if (!gpsSensor_ublox.setI2COutput(requiredProtocols))
       {
         if (settings.printMajorDebugMessages == true)
           {
-            Serial.println(F("beginSensors: sendCfgValset failed when setting the I2C port to output UBX only")); 
-          }       
-      }
-      else
-      {
-        if (settings.printMinorDebugMessages == true)
-          {
-            Serial.println(F("beginSensors: sendCfgValset was successful when setting the I2C port to output UBX only")); 
+            Serial.println(F("beginSensors: setPortOutput failed!")); 
           }       
       }
 
-      //Disable all messages in RAM (maxWait 2100)
-      disableMessages(2100);
+      //Save the port configuration - causes the IO system to reset!
+      gpsSensor_ublox.saveConfigSelective(VAL_CFG_SUBSEC_IOPORT);
+      delay(2100);
       
-      //Disable USB port if required
-      if (settings.sensor_uBlox.enableUSB == false)
-      {
-        success = gpsSensor_ublox.setVal8(UBLOX_CFG_USB_ENABLED, 0, VAL_LAYER_RAM, 1100); // CFG-USB-ENABLED (in RAM only)
-        if (success == 0)
-        {
-          if (settings.printMajorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset failed when disabling the USB port")); 
-            }       
-        }
-        else
-        {
-          if (settings.printMinorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset was successful when disabling the USB port")); 
-            }       
-        }
-      }
-
-      //Disable UART1 port if required
-      if (settings.sensor_uBlox.enableUART1 == false)
-      {
-        success = gpsSensor_ublox.setVal8(UBLOX_CFG_UART1_ENABLED, 0, VAL_LAYER_RAM, 1100); // CFG-UART1-ENABLED (in RAM only)
-        if (success == 0)
-        {
-          if (settings.printMajorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset failed when disabling UART1")); 
-            }       
-        }
-        else
-        {
-          if (settings.printMinorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset was successful when disabling UART1")); 
-            }       
-        }
-      }
-
-      //Disable UART2 port if required
-      if (settings.sensor_uBlox.enableUART2 == false)
-      {
-        success = gpsSensor_ublox.setVal8(UBLOX_CFG_UART2_ENABLED, 0, VAL_LAYER_RAM, 1100); // CFG-UART2-ENABLED (in RAM only)
-        if (success == 0)
-        {
-          if (settings.printMajorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset failed when disabling UART2")); 
-            }       
-        }
-        else
-        {
-          if (settings.printMinorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset was successful when disabling UART2")); 
-            }       
-        }
-      }
-
-      //Disable SPI port if required
-      if (settings.sensor_uBlox.enableSPI == false)
-      {
-        success = gpsSensor_ublox.setVal8(UBLOX_CFG_SPI_ENABLED, 0, VAL_LAYER_RAM, 1100); // CFG-SPI-ENABLED (in RAM only)
-        if (success == 0)
-        {
-          if (settings.printMajorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset failed when disabling the SPI port")); 
-            }       
-        }
-        else
-        {
-          if (settings.printMinorDebugMessages == true)
-            {
-              Serial.println(F("beginSensors: sendCfgValset was successful when disabling the SPI port")); 
-            }       
-        }
-      }
-
-      //Update settings.sensor_uBlox.minMeasIntervalGPS and settings.sensor_uBlox.minMeasIntervalAll according to module type
-      if (strcmp(minfo.mod,"ZED-F9P") == 0) //Is this a ZED-F9P?
-      {
-        settings.sensor_uBlox.minMeasIntervalGPS = 50; //ZED-F9P can do 20Hz RTK (*** Change this to 40 if you want to push RAWX logging to 25Hz for non-RTK applications ***)
-        settings.sensor_uBlox.minMeasIntervalAll = 125; //ZED-F9P can do 8Hz RTK
-      }
-      else if (strcmp(minfo.mod,"ZED-F9K") == 0) //Is this a ZED-F9K?
-      {
-        settings.sensor_uBlox.minMeasIntervalGPS = 33; //ZED-F9K can do 30Hz
-        settings.sensor_uBlox.minMeasIntervalAll = 100; //ZED-F9K can do 10Hz (Guess!)
-      }
-      else if (strcmp(minfo.mod,"ZED-F9R") == 0) //Is this a ZED-F9R?
-      {
-        settings.sensor_uBlox.minMeasIntervalGPS = 33; //ZED-F9R can do 30Hz
-        settings.sensor_uBlox.minMeasIntervalAll = 100; //ZED-F9R can do 10Hz (Guess!)
-      }
-      else if (strcmp(minfo.mod,"ZED-F9H") == 0) //Is this a ZED-F9H?
-      {
-        settings.sensor_uBlox.minMeasIntervalGPS = 33; //ZED-F9H can do 30Hz
-        settings.sensor_uBlox.minMeasIntervalAll = 100; //ZED-F9H can do 10Hz (Guess!)
-      }
-      else if (strcmp(minfo.mod,"ZED-F9T") == 0) //Is this a ZED-F9T?
-      {
-        settings.sensor_uBlox.minMeasIntervalGPS = 50; //ZED-F9T can do 20Hz
-        settings.sensor_uBlox.minMeasIntervalAll = 125; //ZED-F9T can do 8Hz
-      }
-      else if (strcmp(minfo.mod,"NEO-M9N") == 0) //Is this a NEO-M9N?
-      {
-        settings.sensor_uBlox.minMeasIntervalGPS = 40; //NEO-M9N can do 25Hz
-        settings.sensor_uBlox.minMeasIntervalAll = 40; //NEO-M9N can do 25Hz
-      }
-      else
-      {
-        settings.sensor_uBlox.minMeasIntervalGPS = 50; //Default to 20Hz
-        settings.sensor_uBlox.minMeasIntervalAll = 125; //Default to 8Hz
-      }
-
-      //Calculate measurement rate
-      uint16_t measRate;
-      if (settings.usBetweenReadings < (((uint32_t)settings.sensor_uBlox.minMeasIntervalGPS) * 1000)) // Check if usBetweenReadings is too low
-      {
-        measRate = settings.sensor_uBlox.minMeasIntervalGPS;
-      }
-      else if (settings.usBetweenReadings > (0xFFFF * 1000)) // Check if usBetweenReadings is too high
-      {
-        measRate = 0xFFFF;
-      }
-      else
-      {
-        measRate = (uint16_t)(settings.usBetweenReadings / 1000); // Convert usBetweenReadings to ms
-      }
-      
-      //If measurement interval is less than minMeasIntervalAll then warn the user that they may need to disable all constellations except GPS
-      //If measurement interval is less than minMeasIntervalRAWXAll and RAWX is enabled then also warn the user
-      if ((measRate < settings.sensor_uBlox.minMeasIntervalAll) || ((measRate < settings.sensor_uBlox.minMeasIntervalRAWXAll) && (settings.sensor_uBlox.logUBXRXMRAWX == true)))
-      {
-        // Check if any constellations other than GPS are enabled
-        if ((settings.sensor_uBlox.enableGLO) || (settings.sensor_uBlox.enableGAL) || (settings.sensor_uBlox.enableBDS) || (settings.sensor_uBlox.enableQZSS))
-        {
-          Serial.println(F("*** !!! WARNING !!! ***"));
-          Serial.println(F("*** You may need to disable GLONASS, Galileo, BeiDou and QZSS to achieve the selected logging rate ***"));
-          Serial.println(F("*** (Use the \"Configure GNSS Device\" menu to disable them) ***"));
-        }        
-      }
-
-      // Enable/Disable the selected constellations in RAM (MaxWait 2100)
+      // Enable/Disable the selected constellations
       // Let's do this before we set the message rate and enable messages
       enableConstellations(2100);
       
       //Set output rate
-      gpsSensor_ublox.newCfgValset16(UBLOX_CFG_RATE_MEAS, measRate, VAL_LAYER_RAM); // CFG-RATE-MEAS : Configure measurement period (in RAM only)
-      success = gpsSensor_ublox.sendCfgValset16(UBLOX_CFG_RATE_NAV, 1, 2100); // CFG-RATE-NAV : 1 measurement per navigation solution (maxWait 2100ms)
-      if (success == 0)
-      {
-        if (settings.printMajorDebugMessages == true)
-          {
-            Serial.println(F("beginSensors: sendCfgValset failed when setting message interval")); 
-          }       
-      }
-      else
-      {
-        if (settings.printMinorDebugMessages == true)
-          {
-            Serial.println(F("beginSensors: sendCfgValset was successful when setting message interval")); 
-          }       
-      }
+      gpsSensor_ublox.setMeasurementRate((uint16_t)(settings.usBetweenReadings / 1000ULL));
+
+      //Set the HNR rate
+      gpsSensor_ublox.setHNRNavigationRate(settings.hnrNavigationRate);
 
       //Enable the selected messages in RAM (MaxWait 2100)
       enableMessages(2100);
@@ -310,10 +160,17 @@ bool detectQwiicDevices()
   {
     if (settings.printMinorDebugMessages == true)
     {
-      Serial.printf("Device found at address 0x%02X\r\n", address);
+      Serial.printf("detectQwiicDevices: device found at address 0x%02X\r\n", address);
     }
-    if (gpsSensor_ublox.begin(qwiic, address) == true) //Wire port, address
+    SFE_UBLOX_GNSS tempGNSS;
+    if (settings.printGNSSDebugMessages) //Enable debug messages if desired
+      tempGNSS.enableDebugging(Serial, !settings.printMinorDebugMessages);
+    if (tempGNSS.begin(qwiic, address) == true) //Wire port, address
     {
+      if (settings.printMinorDebugMessages == true)
+      {
+        Serial.printf("detectQwiicDevices: u-blox GNSS found at address 0x%02X\r\n", address);
+      }
       qwiicAvailable.uBlox = true;
       somethingDetected = true;
     }
@@ -331,21 +188,22 @@ void openNewLogFile()
   {
     if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
     {
-      //Disable all messages in RAM (maxWait 0)
-      disableMessages(0);
+      //Disable all messages
+      disableMessages(1100);
       //Using a maxWait of zero means we don't wait for the ACK/NACK
       //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
 
       unsigned long pauseUntil = millis() + 2100UL; //Wait > 500ms so we can be sure SD data is sync'd
       while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
       {
-        storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+        storeData();
       }
 
       //We've waited long enough for the last of the data to come in
       //so now we can close the current file and open a new one
       Serial.print(F("Closing: "));
       Serial.println(gnssDataFileName);
+      storeFinalData();
       gnssDataFile.sync();
 
       updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
@@ -385,21 +243,22 @@ void closeLogFile()
   {
     if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
     {
-      //Disable all messages in RAM (maxWait 0)
-      disableMessages(0);
+      //Disable all messages
+      disableMessages(1100);
       //Using a maxWait of zero means we don't wait for the ACK/NACK
       //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
 
       unsigned long pauseUntil = millis() + 2100UL; //Wait > 500ms so we can be sure SD data is sync'd
       while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
       {
-        storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+        storeData();
       }
 
       //We've waited long enough for the last of the data to come in
       //so now we can close the current file and open a new one
       Serial.print(F("Closing: "));
       Serial.println(gnssDataFileName);
+      storeFinalData();
       gnssDataFile.sync();
 
       updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
@@ -416,21 +275,22 @@ void resetGNSS()
   {
     if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
     {
-      //Disable all messages in RAM (maxWait 0)
-      disableMessages(0);
+      //Disable all messages
+      disableMessages(1100);
       //Using a maxWait of zero means we don't wait for the ACK/NACK
       //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
 
       unsigned long pauseUntil = millis() + 2100UL; //Wait >> 500ms so we can be sure SD data is sync'd
       while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
       {
-        storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+        storeData();
       }
 
       //We've waited long enough for the last of the data to come in
       //so now we can close the current file and open a new one
       Serial.print(F("Closing: "));
       Serial.println(gnssDataFileName);
+      storeFinalData();
       gnssDataFile.sync();
 
       updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
@@ -438,9 +298,7 @@ void resetGNSS()
       gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
 
       //Reset the GNSS
-      //Note: this method is DEPRECATED. TO DO: replace this with UBX-CFG-VALDEL ?
       gpsSensor_ublox.factoryDefault(2100);
-      gpsSensor_ublox.factoryReset();
 
       //Wait 5 secs
       Serial.print(F("GNSS has been reset. Waiting 5 seconds."));
@@ -457,166 +315,462 @@ void resetGNSS()
   }
 }
 
-uint8_t disableMessages(uint16_t maxWait)
+void disableMessages(uint16_t maxWait)
 {
-  //Disable all logable messages
-  uint8_t success1 = true;
-  success1 &= gpsSensor_ublox.newCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_CLOCK_I2C, 0, VAL_LAYER_RAM); // CFG-MSGOUT-UBX_NAV_CLOCK_I2C (in RAM only)
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_ATT_I2C, 0); // CFG-MSGOUT-UBX_NAV_ATT_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_DOP_I2C, 0); // CFG-MSGOUT-UBX_NAV_DOP_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_ODO_I2C, 0); // CFG-MSGOUT-UBX_NAV_ODO_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_POSECEF_I2C, 0); // CFG-MSGOUT-UBX_NAV_POSECEF_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_POSLLH_I2C, 0); // CFG-MSGOUT-UBX_NAV_POSLLH_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_PVT_I2C, 0); // CFG-MSGOUT-UBX_NAV_PVT_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_STATUS_I2C, 0); // CFG-MSGOUT-UBX_NAV_STATUS_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_TIMEUTC_I2C, 0); // CFG-MSGOUT-UBX_NAV_TIMEUTC_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_VELECEF_I2C, 0); // CFG-MSGOUT-UBX_NAV_VELECEF_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_VELNED_I2C, 0); // CFG-MSGOUT-UBX_NAV_VELNED_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_RXM_SFRBX_I2C, 0); // CFG-MSGOUT-UBX_RXM_SFRBX_I2C
-  success1 &= gpsSensor_ublox.sendCfgValset8(UBLOX_CFG_MSGOUT_UBX_TIM_TM2_I2C, 0, maxWait); // CFG-MSGOUT-UBX_TIM_TM2_I2C
+  //gpsSensor_ublox.setAutoNAVPOSECEFcallback(&callbackNAVPOSECEF, maxWait);
+  gpsSensor_ublox.setAutoNAVPOSECEFrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVPOSECEF(false);
 
-  uint8_t success2 = true;
-  success2 &= gpsSensor_ublox.newCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSECEF_I2C, 0, VAL_LAYER_RAM); // CFG-MSGOUT-UBX_NAV_HPPOSECEF_I2C
-  success2 &= gpsSensor_ublox.sendCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSLLH_I2C, 0, maxWait); // CFG-MSGOUT-UBX_NAV_HPPOSLLH_I2C
+  //gpsSensor_ublox.setAutoNAVSTATUScallback(&callbackNAVSTATUS, maxWait);
+  gpsSensor_ublox.setAutoNAVSTATUSrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVSTATUS(false);
 
-  uint8_t success3 = gpsSensor_ublox.setVal8(UBLOX_CFG_MSGOUT_UBX_NAV_RELPOSNED_I2C, 0, VAL_LAYER_RAM, maxWait); // CFG-MSGOUT-UBX_NAV_RELPOSNED_I2C
+  //gpsSensor_ublox.setAutoDOPcallback(&callbackNAVDOP, maxWait);
+  gpsSensor_ublox.setAutoDOPrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVDOP(false);
 
-  uint8_t success4 = gpsSensor_ublox.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_RAWX_I2C, 0, VAL_LAYER_RAM, maxWait); // CFG-MSGOUT-UBX_RXM_RAWX_I2C
+  //gpsSensor_ublox.setAutoNAVATTcallback(&callbackNAVATT, maxWait);
+  gpsSensor_ublox.setAutoNAVATTrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVATT(false);
 
-  uint8_t success5 = gpsSensor_ublox.setVal8(UBLOX_CFG_MSGOUT_UBX_NAV_ATT_I2C, 0, VAL_LAYER_RAM, maxWait); // CFG-MSGOUT-UBX_NAV_ATT_I2C
+  //gpsSensor_ublox.setAutoPVTcallback(&callbackNAVPVT, maxWait);
+  gpsSensor_ublox.setAutoPVTrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVPVT(false);
 
-  uint8_t success = success1 | success2 | success3 | success4 | success5;
-  if (success > 0)
-  {
-    if (settings.printMinorDebugMessages == true)
-      {
-        Serial.println(F("disableMessages: sendCfgValset / setVal8 was at least partially successful when disabling messages")); 
-      }       
-  }
-  else if (maxWait > 0) //If maxWait was zero then we expect success to be false
-  {
-    if (settings.printMajorDebugMessages == true)
-      {
-        Serial.println(F("disableMessages: sendCfgValset / setVal8 failed when disabling messages")); 
-      }       
-  }
-  return(success);
+  //gpsSensor_ublox.setAutoNAVODOcallback(&callbackNAVODO, maxWait);
+  gpsSensor_ublox.setAutoNAVODOrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVODO(false);
+
+  //gpsSensor_ublox.setAutoNAVVELECEFcallback(&callbackNAVVELECEF, maxWait);
+  gpsSensor_ublox.setAutoNAVVELECEFrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVVELECEF(false);
+
+  //gpsSensor_ublox.setAutoNAVVELNEDcallback(&callbackNAVVELNED, maxWait);
+  gpsSensor_ublox.setAutoNAVVELNEDrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVVELNED(false);
+
+  //gpsSensor_ublox.setAutoNAVHPPOSECEFcallback(&callbackNAVHPPOSECEF, maxWait);
+  gpsSensor_ublox.setAutoNAVHPPOSECEFrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVHPPOSECEF(false);
+
+  //gpsSensor_ublox.setAutoHPPOSLLHcallback(&callbackNAVHPPOSLLH, maxWait);
+  gpsSensor_ublox.setAutoHPPOSLLHrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVHPPOSLLH(false);
+
+  //gpsSensor_ublox.setAutoNAVCLOCKcallback(&callbackNAVCLOCK, maxWait);
+  gpsSensor_ublox.setAutoNAVCLOCKrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVCLOCK(false);
+
+  //gpsSensor_ublox.setAutoRELPOSNEDcallback(&callbackNAVRELPOSNED, maxWait);
+  gpsSensor_ublox.setAutoRELPOSNEDrate(0, false, maxWait);
+  gpsSensor_ublox.logNAVRELPOSNED(false);
+
+  //gpsSensor_ublox.setAutoRXMSFRBXcallback(&callbackRXMSFRBX, maxWait);
+  gpsSensor_ublox.setAutoRXMSFRBXrate(0, false, maxWait);
+  gpsSensor_ublox.logRXMSFRBX(false);
+
+  //gpsSensor_ublox.setAutoRXMRAWXcallback(&callbackRXMRAWX, maxWait);
+  gpsSensor_ublox.setAutoRXMRAWXrate(0, false, maxWait);
+  gpsSensor_ublox.logRXMRAWX(false);
+
+  //gpsSensor_ublox.setAutoTIMTM2callback(&callbackTIMTM2, maxWait);
+  gpsSensor_ublox.setAutoTIMTM2rate(0, false, maxWait);
+  gpsSensor_ublox.logTIMTM2(false);
+
+  //gpsSensor_ublox.setAutoESFALGcallback(&callbackESFALG, maxWait);
+  gpsSensor_ublox.setAutoESFALGrate(0, false, maxWait);
+  gpsSensor_ublox.logESFALG(false);
+
+  //gpsSensor_ublox.setAutoESFINScallback(&callbackESFINS, maxWait);
+  gpsSensor_ublox.setAutoESFINSrate(0, false, maxWait);
+  gpsSensor_ublox.logESFINS(false);
+
+  //gpsSensor_ublox.setAutoESFMEAScallback(&callbackESFMEAS, maxWait);
+  gpsSensor_ublox.setAutoESFMEASrate(0, false, maxWait);
+  gpsSensor_ublox.logESFMEAS(false);
+
+  //gpsSensor_ublox.setAutoESFRAWcallback(&callbackESFRAW, maxWait);
+  gpsSensor_ublox.setAutoESFRAWrate(0, false, maxWait);
+  gpsSensor_ublox.logESFRAW(false);
+
+  //gpsSensor_ublox.setAutoESFSTATUScallback(&callbackESFSTATUS, maxWait);
+  gpsSensor_ublox.setAutoESFSTATUSrate(0, false, maxWait);
+  gpsSensor_ublox.logESFSTATUS(false);
+
+  //gpsSensor_ublox.setAutoHNRPVTcallback(&callbackHNRPVT, maxWait);
+  gpsSensor_ublox.setAutoHNRPVTrate(0, false, maxWait);
+  gpsSensor_ublox.logHNRPVT(false);
+
+  //gpsSensor_ublox.setAutoHNRATTcallback(&callbackHNRATT, maxWait);
+  gpsSensor_ublox.setAutoHNRATTrate(0, false, maxWait);
+  gpsSensor_ublox.logHNRATT(false);
+
+  //gpsSensor_ublox.setAutoHNRINScallback(&callbackHNRINS, maxWait);
+  gpsSensor_ublox.setAutoHNRINSrate(0, false, maxWait);
+  gpsSensor_ublox.logHNRINS(false);
+
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_DTM, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GAQ, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBQ, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBS, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLQ, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNQ, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNS, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GPQ, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GQQ, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GRS, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_RLM, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_TXT, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_VLW, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.setNMEALoggingMask(0);
 }
 
-uint8_t enableMessages(uint16_t maxWait)
+void enableMessages(uint16_t maxWait)
 {
-  //(Re)Enable the selected messages
-  uint8_t success1 = true;
-  success1 &= gpsSensor_ublox.newCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_CLOCK_I2C, settings.sensor_uBlox.logUBXNAVCLOCK, VAL_LAYER_RAM); // CFG-MSGOUT-UBX_NAV_CLOCK_I2C (in RAM only)
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_DOP_I2C, settings.sensor_uBlox.logUBXNAVDOP); // CFG-MSGOUT-UBX_NAV_DOP_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_ODO_I2C, settings.sensor_uBlox.logUBXNAVODO); // CFG-MSGOUT-UBX_NAV_ODO_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_POSECEF_I2C, settings.sensor_uBlox.logUBXNAVPOSECEF); // CFG-MSGOUT-UBX_NAV_POSECEF_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_POSLLH_I2C, settings.sensor_uBlox.logUBXNAVPOSLLH); // CFG-MSGOUT-UBX_NAV_POSLLH_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_PVT_I2C, settings.sensor_uBlox.logUBXNAVPVT); // CFG-MSGOUT-UBX_NAV_PVT_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_STATUS_I2C, settings.sensor_uBlox.logUBXNAVSTATUS); // CFG-MSGOUT-UBX_NAV_STATUS_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_TIMEUTC_I2C, settings.sensor_uBlox.logUBXNAVTIMEUTC); // CFG-MSGOUT-UBX_NAV_TIMEUTC_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_VELECEF_I2C, settings.sensor_uBlox.logUBXNAVVELECEF); // CFG-MSGOUT-UBX_NAV_VELECEF_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_VELNED_I2C, settings.sensor_uBlox.logUBXNAVVELNED); // CFG-MSGOUT-UBX_NAV_VELNED_I2C
-  success1 &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_UBX_RXM_SFRBX_I2C, settings.sensor_uBlox.logUBXRXMSFRBX); // CFG-MSGOUT-UBX_RXM_SFRBX_I2C
-  success1 &= gpsSensor_ublox.sendCfgValset8(UBLOX_CFG_MSGOUT_UBX_TIM_TM2_I2C, settings.sensor_uBlox.logUBXTIMTM2, maxWait); // CFG-MSGOUT-UBX_TIM_TM2_I2C
+  gpsSensor_ublox.setAutoNAVPOSECEFcallback(&callbackNAVPOSECEF, maxWait);
+  gpsSensor_ublox.logNAVPOSECEF(settings.sensor_uBlox.logUBXNAVPOSECEF > 0 ? true : false);
+  gpsSensor_ublox.setAutoNAVPOSECEFrate(settings.sensor_uBlox.logUBXNAVPOSECEF, false, maxWait);
 
-  uint8_t success2 = true;
-  if (minfo.SPG == false)
+  gpsSensor_ublox.setAutoNAVSTATUScallback(&callbackNAVSTATUS, maxWait);
+  gpsSensor_ublox.logNAVSTATUS(settings.sensor_uBlox.logUBXNAVSTATUS > 0 ? true : false);
+  gpsSensor_ublox.setAutoNAVSTATUSrate(settings.sensor_uBlox.logUBXNAVSTATUS, false, maxWait);
+
+  gpsSensor_ublox.setAutoDOPcallback(&callbackNAVDOP, maxWait);
+  gpsSensor_ublox.logNAVDOP(settings.sensor_uBlox.logUBXNAVDOP > 0 ? true : false);
+  gpsSensor_ublox.setAutoDOPrate(settings.sensor_uBlox.logUBXNAVDOP, false, maxWait);
+
+  gpsSensor_ublox.setAutoNAVATTcallback(&callbackNAVATT, maxWait);
+  gpsSensor_ublox.logNAVATT(settings.sensor_uBlox.logUBXNAVATT > 0 ? true : false);
+  gpsSensor_ublox.setAutoNAVATTrate(settings.sensor_uBlox.logUBXNAVATT, false, maxWait);
+
+  gpsSensor_ublox.setAutoPVTcallback(&callbackNAVPVT, maxWait);
+  gpsSensor_ublox.logNAVPVT(settings.sensor_uBlox.logUBXNAVPVT > 0 ? true : false);
+  gpsSensor_ublox.setAutoPVTrate(settings.sensor_uBlox.logUBXNAVPVT, false, maxWait);
+
+  gpsSensor_ublox.setAutoNAVODOcallback(&callbackNAVODO, maxWait);
+  gpsSensor_ublox.logNAVODO(settings.sensor_uBlox.logUBXNAVODO > 0 ? true : false);
+  gpsSensor_ublox.setAutoNAVODOrate(settings.sensor_uBlox.logUBXNAVODO, false, maxWait);
+
+  gpsSensor_ublox.setAutoNAVVELECEFcallback(&callbackNAVVELECEF, maxWait);
+  gpsSensor_ublox.logNAVVELECEF(settings.sensor_uBlox.logUBXNAVVELECEF > 0 ? true : false);
+  gpsSensor_ublox.setAutoNAVVELECEFrate(settings.sensor_uBlox.logUBXNAVVELECEF, false, maxWait);
+
+  gpsSensor_ublox.setAutoNAVVELNEDcallback(&callbackNAVVELNED, maxWait);
+  gpsSensor_ublox.logNAVVELNED(settings.sensor_uBlox.logUBXNAVVELNED > 0 ? true : false);
+  gpsSensor_ublox.setAutoNAVVELNEDrate(settings.sensor_uBlox.logUBXNAVVELNED, false, maxWait);
+
+  gpsSensor_ublox.setAutoNAVHPPOSECEFcallback(&callbackNAVHPPOSECEF, maxWait);
+  gpsSensor_ublox.logNAVHPPOSECEF(settings.sensor_uBlox.logUBXNAVHPPOSECEF > 0 ? true : false);
+  gpsSensor_ublox.setAutoNAVHPPOSECEFrate(settings.sensor_uBlox.logUBXNAVHPPOSECEF, false, maxWait);
+
+  gpsSensor_ublox.setAutoHPPOSLLHcallback(&callbackNAVHPPOSLLH, maxWait);
+  gpsSensor_ublox.logNAVHPPOSLLH(settings.sensor_uBlox.logUBXNAVHPPOSLLH > 0 ? true : false);
+  gpsSensor_ublox.setAutoHPPOSLLHrate(settings.sensor_uBlox.logUBXNAVHPPOSLLH, false, maxWait);
+
+  gpsSensor_ublox.setAutoNAVCLOCKcallback(&callbackNAVCLOCK, maxWait);
+  gpsSensor_ublox.logNAVCLOCK(settings.sensor_uBlox.logUBXNAVCLOCK > 0 ? true : false);
+  gpsSensor_ublox.setAutoNAVCLOCKrate(settings.sensor_uBlox.logUBXNAVCLOCK, false, maxWait);
+
+  gpsSensor_ublox.setAutoRELPOSNEDcallback(&callbackNAVRELPOSNED, maxWait);
+  gpsSensor_ublox.logNAVRELPOSNED(settings.sensor_uBlox.logUBXNAVRELPOSNED > 0 ? true : false);
+  gpsSensor_ublox.setAutoRELPOSNEDrate(settings.sensor_uBlox.logUBXNAVRELPOSNED, false, maxWait);
+
+  gpsSensor_ublox.setAutoRXMSFRBXcallback(&callbackRXMSFRBX, maxWait);
+  gpsSensor_ublox.logRXMSFRBX(settings.sensor_uBlox.logUBXRXMSFRBX > 0 ? true : false);
+  gpsSensor_ublox.setAutoRXMSFRBXrate(settings.sensor_uBlox.logUBXRXMSFRBX, false, maxWait);
+
+  gpsSensor_ublox.disableUBX7Fcheck(settings.sensor_uBlox.logUBXRXMRAWX > 0 ? true : false); // RAWX data can legitimately contain 0x7F, so we need to disable the "7F" check in checkUbloxI2C
+  gpsSensor_ublox.setAutoRXMRAWXcallback(&callbackRXMRAWX, maxWait);
+  gpsSensor_ublox.logRXMRAWX(settings.sensor_uBlox.logUBXRXMRAWX > 0 ? true : false);
+  gpsSensor_ublox.setAutoRXMRAWXrate(settings.sensor_uBlox.logUBXRXMRAWX, false, maxWait);
+
+  gpsSensor_ublox.setAutoTIMTM2callback(&callbackTIMTM2, maxWait);
+  gpsSensor_ublox.logTIMTM2(settings.sensor_uBlox.logUBXTIMTM2 > 0 ? true : false);
+  gpsSensor_ublox.setAutoTIMTM2rate(settings.sensor_uBlox.logUBXTIMTM2, false, maxWait);
+
+  gpsSensor_ublox.setAutoESFALGcallback(&callbackESFALG, maxWait);
+  gpsSensor_ublox.logESFALG(settings.sensor_uBlox.logUBXESFALG > 0 ? true : false);
+  gpsSensor_ublox.setAutoESFALGrate(settings.sensor_uBlox.logUBXESFALG, false, maxWait);
+
+  gpsSensor_ublox.setAutoESFINScallback(&callbackESFINS, maxWait);
+  gpsSensor_ublox.logESFINS(settings.sensor_uBlox.logUBXESFINS > 0 ? true : false);
+  gpsSensor_ublox.setAutoESFINSrate(settings.sensor_uBlox.logUBXESFINS, false, maxWait);
+
+  gpsSensor_ublox.setAutoESFMEAScallback(&callbackESFMEAS, maxWait);
+  gpsSensor_ublox.logESFMEAS(settings.sensor_uBlox.logUBXESFMEAS > 0 ? true : false);
+  gpsSensor_ublox.setAutoESFMEASrate(settings.sensor_uBlox.logUBXESFMEAS, false, maxWait);
+
+  gpsSensor_ublox.setAutoESFRAWcallback(&callbackESFRAW, maxWait);
+  gpsSensor_ublox.logESFRAW(settings.sensor_uBlox.logUBXESFRAW > 0 ? true : false);
+  gpsSensor_ublox.setAutoESFRAWrate(settings.sensor_uBlox.logUBXESFRAW, false, maxWait);
+
+  gpsSensor_ublox.setAutoESFSTATUScallback(&callbackESFSTATUS, maxWait);
+  gpsSensor_ublox.logESFSTATUS(settings.sensor_uBlox.logUBXESFSTATUS > 0 ? true : false);
+  gpsSensor_ublox.setAutoESFSTATUSrate(settings.sensor_uBlox.logUBXESFSTATUS, false, maxWait);
+
+  gpsSensor_ublox.setAutoHNRPVTcallback(&callbackHNRPVT, maxWait);
+  gpsSensor_ublox.logHNRPVT(settings.sensor_uBlox.logUBXHNRPVT > 0 ? true : false);
+  gpsSensor_ublox.setAutoHNRPVTrate(settings.sensor_uBlox.logUBXHNRPVT, false, maxWait);
+
+  gpsSensor_ublox.setAutoHNRATTcallback(&callbackHNRATT, maxWait);
+  gpsSensor_ublox.logHNRATT(settings.sensor_uBlox.logUBXHNRATT > 0 ? true : false);
+  gpsSensor_ublox.setAutoHNRATTrate(settings.sensor_uBlox.logUBXHNRATT, false, maxWait);
+
+  gpsSensor_ublox.setAutoHNRINScallback(&callbackHNRINS, maxWait);
+  gpsSensor_ublox.logHNRINS(settings.sensor_uBlox.logUBXHNRINS > 0 ? true : false);
+  gpsSensor_ublox.setAutoHNRINSrate(settings.sensor_uBlox.logUBXHNRINS, false, maxWait);
+
+  uint32_t nmeaMessages = 0;
+
+  if (settings.sensor_uBlox.logNMEADTM > 0)
   {
-    success2 &= gpsSensor_ublox.newCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSECEF_I2C, settings.sensor_uBlox.logUBXNAVHPPOSECEF, VAL_LAYER_RAM); // CFG-MSGOUT-UBX_NAV_HPPOSECEF_I2C
-    success2 &= gpsSensor_ublox.sendCfgValset8(UBLOX_CFG_MSGOUT_UBX_NAV_HPPOSLLH_I2C, settings.sensor_uBlox.logUBXNAVHPPOSLLH, maxWait); // CFG-MSGOUT-UBX_NAV_HPPOSLLH_I2C
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_DTM;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_DTM, COM_PORT_I2C, settings.sensor_uBlox.logNMEADTM, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_DTM, COM_PORT_I2C, maxWait);
   }
 
-  uint8_t success3 = true;
-  if ((minfo.HPG == true) || (minfo.HDG == true) || (minfo.ADR == true) || (minfo.LAP == true))
+  if (settings.sensor_uBlox.logNMEAGAQ > 0)
   {
-    success3 = gpsSensor_ublox.setVal8(UBLOX_CFG_MSGOUT_UBX_NAV_RELPOSNED_I2C, settings.sensor_uBlox.logUBXNAVRELPOSNED, VAL_LAYER_RAM, maxWait); // CFG-MSGOUT-UBX_NAV_RELPOSNED_I2C
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GAQ;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GAQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGAQ, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GAQ, COM_PORT_I2C, maxWait);
   }
 
-  uint8_t success4 = true;  
-  if ((minfo.HPG == true) || (minfo.TIM == true) || (minfo.FTS == true)) //TO DO: I'm guessing that FTS supports RAWX!
+  if (settings.sensor_uBlox.logNMEAGBQ > 0)
   {
-    success4 = gpsSensor_ublox.setVal8(UBLOX_CFG_MSGOUT_UBX_RXM_RAWX_I2C, settings.sensor_uBlox.logUBXRXMRAWX, VAL_LAYER_RAM, maxWait); // CFG-MSGOUT-UBX_RXM_RAWX_I2C
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBQ;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GBQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGBQ, maxWait);
   }
-  
-  uint8_t success5 = true;  
-  if ((minfo.HPS == true))
+  else
   {
-    success5 = gpsSensor_ublox.setVal8(UBLOX_CFG_MSGOUT_UBX_NAV_ATT_I2C, settings.sensor_uBlox.logUBXNAVATT, VAL_LAYER_RAM, maxWait); // CFG-MSGOUT-UBX_NAV_ATT_I2C
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBQ, COM_PORT_I2C, maxWait);
   }
-  
-  uint8_t success = success1 & success2 & success3 & success4 & success5;
-  if (success > 0)
+
+  if (settings.sensor_uBlox.logNMEAGBS > 0)
   {
-  if (settings.printMinorDebugMessages == true)
-    {
-      Serial.println(F("enableMessages: sendCfgValset / setVal8 was successful when enabling messages. ")); 
-    }       
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBS;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GBS, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGBS, maxWait);
   }
-  else if (maxWait > 0) //If maxWait was zero then we expect success to be false
+  else
   {
-  if (settings.printMajorDebugMessages == true)
-    {
-      Serial.println(F("enableMessages: at least one sendCfgValset / setVal8 failed when enabling messages")); 
-    }       
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBS, COM_PORT_I2C, maxWait);
   }
-  return(success);
+
+  if (settings.sensor_uBlox.logNMEAGGA > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GGA;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGGA, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGLL > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GLL;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGLL, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGLQ > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GLQ;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GLQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGLQ, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLQ, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGNQ > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBQ;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GNQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGNQ, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNQ, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGNS > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GNS;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GNS, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGNS, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNS, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGPQ > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GPQ;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GPQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGPQ, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GPQ, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGQQ > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GQQ;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GQQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGQQ, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GQQ, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGRS > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GRS;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GRS, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGRS, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GRS, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGSA > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GSA;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGSA, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGST > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GST;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGST, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAGSV > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GSV;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGSV, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEARLM > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_RLM;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_RLM, COM_PORT_I2C, settings.sensor_uBlox.logNMEARLM, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_RLM, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEARMC > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_RMC;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_I2C, settings.sensor_uBlox.logNMEARMC, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEATXT > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_TXT;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_TXT, COM_PORT_I2C, settings.sensor_uBlox.logNMEATXT, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_TXT, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAVLW > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_VLW;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_VLW, COM_PORT_I2C, settings.sensor_uBlox.logNMEAVLW, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_VLW, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAVTG > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_VTG;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C, settings.sensor_uBlox.logNMEAVTG, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C, maxWait);
+  }
+
+  if (settings.sensor_uBlox.logNMEAZDA > 0)
+  {
+    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_ZDA;
+    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_I2C, settings.sensor_uBlox.logNMEAZDA, maxWait);
+  }
+  else
+  {
+    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_I2C, maxWait);
+  }
+
+  gpsSensor_ublox.setNMEALoggingMask(nmeaMessages);
 }
 
-uint8_t enableConstellations(uint16_t maxWait)
+boolean enableConstellations(uint16_t maxWait)
 {
-  //Enable the selected constellations
-  uint8_t success = true;
-  success &= gpsSensor_ublox.newCfgValset8(UBLOX_CFG_SIGNAL_GPS_ENA, settings.sensor_uBlox.enableGPS, VAL_LAYER_RAM);  //CFG-SIGNAL-GPS_ENA   : Enable GPS (in RAM only)
-  success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_SIGNAL_GLO_ENA, settings.sensor_uBlox.enableGLO);                 //CFG-SIGNAL-GLO_ENA   : Enable GLONASS
-  success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_SIGNAL_GAL_ENA, settings.sensor_uBlox.enableGAL);                 //CFG-SIGNAL-GAL_ENA   : Enable Galileo
-  success &= gpsSensor_ublox.addCfgValset8(UBLOX_CFG_SIGNAL_BDS_ENA, settings.sensor_uBlox.enableBDS);                 //CFG-SIGNAL-BDS_ENA   : Enable BeiDou
-  success &= gpsSensor_ublox.sendCfgValset8(UBLOX_CFG_SIGNAL_QZSS_ENA, settings.sensor_uBlox.enableQZSS, maxWait);     //CFG-SIGNAL-QZSS_ENA  : Enable QZSS (maxWait 2100 ms)
-  if (success > 0)
+  boolean success = true;
+  
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGPS, SFE_UBLOX_GNSS_ID_GPS, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGLO, SFE_UBLOX_GNSS_ID_GLONASS, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGAL, SFE_UBLOX_GNSS_ID_GALILEO, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableBDS, SFE_UBLOX_GNSS_ID_BEIDOU, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableQZSS, SFE_UBLOX_GNSS_ID_QZSS, maxWait);
+  
+  if (settings.printMinorDebugMessages)
   {
-    if (settings.printMinorDebugMessages)
+    if (success)
     {
-      Serial.println(F("enableConstellations: sendCfgValset was successful when enabling constellations"));
+      Serial.println(F("enableConstellations: successful"));
     }
-  }
-  else if (maxWait > 0) // If maxWait was zero then we expect success to be false
-  {
-    if (settings.printMajorDebugMessages)
+    else
     {
-      Serial.println(F("enableConstellations: sendCfgValset failed when enabling constellations"));
+      Serial.println(F("enableConstellations: failed!"));
     }
   }
   return (success);
 }
 
-uint8_t powerManagementTask(uint32_t duration, uint16_t maxWait) //Put the module to sleep for duration ms
+boolean powerManagementTask(uint32_t duration, uint16_t maxWait) //Put the module to sleep for duration ms
 {
-  customCfg.cls = UBX_CLASS_RXM; // This is the message Class
-  customCfg.id = UBX_RXM_PMREQ;  // This is the message ID
-  customCfg.len = 16;            // Set the len (length)
-  customCfg.startingSpot = 0;    // Set the startingSpot to zero
-
-  //Define the payload
-  customPayload[0] = 0x00; //Message version (0x00 for this version)
-  customPayload[1] = 0x00; //Reserved
-  customPayload[2] = 0x00; //Reserved
-  customPayload[3] = 0x00; //Reserved
-  customPayload[4] = duration & 0xFF; //Duration of the power management task
-  customPayload[5] = (duration >> 8) & 0xFF;
-  customPayload[6] = (duration >> 16) & 0xFF;
-  customPayload[7] = (duration >> 24) & 0xFF;
-  customPayload[8] = 0x02; //Flags : set the backup bit (leave the force bit clear - module will stay on if USB is connected)
-  customPayload[9] = 0x00; //Flags
-  customPayload[10] = 0x00; //Flags
-  customPayload[11] = 0x00; //Flags
-  customPayload[12] = 0x00; //Disable the wakeup sources
-  customPayload[13] = 0x00; //wakeup sources
-  customPayload[14] = 0x00; //wakeup sources
-  customPayload[15] = 0x00; //wakeup sources
-
-  // Now let's send the command.
   // UBX_RXM_PMREQ does not ACK so we expect the return value to be false
-  return ((gpsSensor_ublox.sendCommand(&customCfg, maxWait) == SFE_UBLOX_STATUS_DATA_SENT));
+  return (gpsSensor_ublox.powerOff(duration, maxWait));
 }
 
 //If certain devices are attached, we need to reduce the I2C max speed

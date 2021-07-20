@@ -39,7 +39,7 @@ void waitForInput()
   while (Serial.available() > 0) Serial.read(); //Clear buffer
   while (Serial.available() == 0)
   {
-    storeData(); //Keep reading I2C data and writing it to SD
+    storeData();
   }
 }
 
@@ -565,3 +565,58 @@ static int olaftoa(float fValue, char *pcBuf, int iPrecision, int bufSize)
 
     return (pcBuf - pcBufInitial);
 } // olaftoa()
+
+//Query the RTC and put the appropriately formatted (according to settings) 
+//string into the passed buffer. timeStringBuffer should be at least 37 chars long
+//Code modified by @DennisMelamed in PR #70
+void getTimeString(char timeStringBuffer[])
+{
+  //reset the buffer
+  timeStringBuffer[0] = '\0';
+
+  myRTC.getTime();
+
+  char rtcDate[12];
+  char rtcDay[3];
+  char rtcMonth[3];
+  char rtcYear[5];
+  if (myRTC.dayOfMonth < 10)
+    sprintf(rtcDay, "0%d", myRTC.dayOfMonth);
+  else
+    sprintf(rtcDay, "%d", myRTC.dayOfMonth);
+  if (myRTC.month < 10)
+    sprintf(rtcMonth, "0%d", myRTC.month);
+  else
+    sprintf(rtcMonth, "%d", myRTC.month);
+  if (myRTC.year < 10)
+    sprintf(rtcYear, "200%d", myRTC.year);
+  else
+    sprintf(rtcYear, "20%d", myRTC.year);
+  sprintf(rtcDate, "%s/%s/%s", rtcYear, rtcMonth, rtcDay);
+  strcat(timeStringBuffer, rtcDate);
+
+  char rtcTime[13];
+  int adjustedHour = myRTC.hour;
+  char rtcHour[3];
+  char rtcMin[3];
+  char rtcSec[3];
+  char rtcHundredths[3];
+  if (adjustedHour < 10)
+    sprintf(rtcHour, "0%d", adjustedHour);
+  else
+    sprintf(rtcHour, "%d", adjustedHour);
+  if (myRTC.minute < 10)
+    sprintf(rtcMin, "0%d", myRTC.minute);
+  else
+    sprintf(rtcMin, "%d", myRTC.minute);
+  if (myRTC.seconds < 10)
+    sprintf(rtcSec, "0%d", myRTC.seconds);
+  else
+    sprintf(rtcSec, "%d", myRTC.seconds);
+  if (myRTC.hundredths < 10)
+    sprintf(rtcHundredths, "0%d", myRTC.hundredths);
+  else
+    sprintf(rtcHundredths, "%d", myRTC.hundredths);
+  sprintf(rtcTime, " %s:%s:%s.%s", rtcHour, rtcMin, rtcSec, rtcHundredths);
+  strcat(timeStringBuffer, rtcTime);
+}

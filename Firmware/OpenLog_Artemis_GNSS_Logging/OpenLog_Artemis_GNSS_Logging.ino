@@ -194,10 +194,8 @@ const int sdPowerDownDelay = 100; //Delay for this many ms before turning off th
 Apollo3RTC myRTC; //Create instance of RTC class
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-//Header files for all possible Qwiic sensors
-//-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
+#define FILE_BUFFER_SIZE 32768
 
 #include "SparkFun_u-blox_GNSS_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS gpsSensor_ublox;
@@ -207,7 +205,6 @@ SFE_UBLOX_GNSS gpsSensor_ublox;
 //Global variables
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint64_t measurementStartTime; //Used to calc the elapsed time
-String beginSensorOutput;
 unsigned long lastReadTime = 0; //Used to delay between u-blox reads
 unsigned long lastDataLogSyncTime = 0; //Used to sync SD every half second
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
@@ -329,8 +326,8 @@ void setup() {
     }
   }
 
-  if (beginSensors() == true) Serial.println(beginSensorOutput); //159 - 865ms but varies based on number of devices attached
-  else Serial.println("No sensors detected");
+  if (beginSensors() == true) Serial.println(F("GNSS online"));
+  else Serial.println(F("GNSS offline"));
 
   //If we are sleeping between readings then we cannot rely on millis() as it is powered down. Used RTC instead.
   measurementStartTime = rtcMillis();
@@ -349,7 +346,7 @@ void loop() {
 
   if (Serial.available()) menuMain(); //Present user menu
 
-  storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+  storeData();
 
   if ((settings.useGPIO32ForStopLogging == true) && (stopLoggingSeen == true)) // Has the user pressed the stop logging button?
   {

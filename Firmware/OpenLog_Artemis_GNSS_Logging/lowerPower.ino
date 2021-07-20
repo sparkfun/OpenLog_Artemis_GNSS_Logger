@@ -20,9 +20,10 @@ void checkBattery(void)
           unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
           while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
           {
-            storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+            storeData();
           }
-      
+
+          storeFinalData();
           gnssDataFile.sync();
       
           updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
@@ -154,9 +155,9 @@ void goToSleep()
   
   if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
   {
-    //Disable all messages in RAM otherwise they will fill up the module's I2C buffer while we are asleep
+    //Disable all messages otherwise they will fill up the module's I2C buffer while we are asleep
     //(Possibly redundant if using a power management task?)
-    disableMessages(0);
+    disableMessages(1100);
     //Using a maxWait of zero means we don't wait for the ACK/NACK
     //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
   }
@@ -167,9 +168,10 @@ void goToSleep()
     unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
     while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
     {
-      storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+      storeData();
     }
 
+    storeFinalData();
     gnssDataFile.sync();
 
     updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
@@ -410,8 +412,8 @@ void stopLogging(void)
   
   if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
   {
-    //Disable all messages in RAM
-    disableMessages(0);
+    //Disable all messages
+    disableMessages(1100);
     //Using a maxWait of zero means we don't wait for the ACK/NACK
     //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
   }
@@ -422,9 +424,10 @@ void stopLogging(void)
     unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
     while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
     {
-      storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+      storeData();
     }
 
+    storeFinalData();
     gnssDataFile.sync();
 
     updateDataFileAccess(&gnssDataFile); //Update the file access time stamp

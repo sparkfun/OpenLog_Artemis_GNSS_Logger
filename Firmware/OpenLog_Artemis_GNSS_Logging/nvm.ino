@@ -169,6 +169,8 @@ void recordSettingsToFile()
     settingsFile.println("enableLowBatteryDetection=" + (String)settings.enableLowBatteryDetection);
     settingsFile.print("lowBatteryThreshold="); settingsFile.println(settings.lowBatteryThreshold);
     settingsFile.print("vinCorrectionFactor="); settingsFile.println(settings.vinCorrectionFactor);
+    settingsFile.print("hnrNavigationRate="); settingsFile.println(settings.hnrNavigationRate);
+    settingsFile.print("printGNSSDebugMessages="); settingsFile.println(settings.printGNSSDebugMessages);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
     settingsFile.close();
@@ -343,6 +345,10 @@ bool parseLine(char* str) {
     settings.lowBatteryThreshold = d;
   else if (strcmp(settingName, "vinCorrectionFactor") == 0)
     settings.vinCorrectionFactor = d;
+  else if (strcmp(settingName, "hnrNavigationRate") == 0)
+    settings.hnrNavigationRate = d;
+  else if (strcmp(settingName, "printGNSSDebugMessages") == 0)
+    settings.printGNSSDebugMessages = d;
   else
   {
     Serial.print("Unknown setting: ");

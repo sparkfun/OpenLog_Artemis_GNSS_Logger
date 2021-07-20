@@ -8,6 +8,16 @@ void menuMain()
   bool prevPrintMinorDebugMessages = settings.printMinorDebugMessages;
   settings.printMajorDebugMessages = false;
   settings.printMinorDebugMessages = false;
+
+  //Disable terminal output when menu is open
+  bool prevTerminalOutput = settings.enableTerminalOutput;
+  settings.enableTerminalOutput = false;
+
+  //Disable GNSS debug messages when menu is open
+  if (qwiicOnline.uBlox && qwiicAvailable.uBlox)
+  {
+    gpsSensor_ublox.disableDebugging();
+  }
   
   while (1)
   {
@@ -34,7 +44,7 @@ void menuMain()
 
     Serial.println(F("r) Reset all OLA settings to default"));
 
-    Serial.println("q) Quit: Close log files and power down");
+    Serial.println("q) Quit: Close log file and power down");
 
     Serial.println(F("d) Debug Menu"));
 
@@ -75,6 +85,7 @@ void menuMain()
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
+        closeLogFile();
         EEPROM.erase();
         if (sd.exists("OLA_GNSS_settings.cfg"))
           sd.remove("OLA_GNSS_settings.cfg");
@@ -82,7 +93,8 @@ void menuMain()
         Serial.print(F("Settings erased. Please reset OpenLog Artemis and open a terminal at "));
         Serial.print((String)settings.serialTerminalBaudRate);
         Serial.println(F("bps..."));
-        while (1);
+        delay(sdPowerDownDelay); // Give the SD card time to shut down
+        powerDown();
       }
       else
         Serial.println(F("Reset aborted"));
@@ -94,7 +106,7 @@ void menuMain()
       if (bContinue == 'y')
       {
         closeLogFile();
-        Serial.print(F("Log files are closed. Please reset OpenLog Artemis and open a terminal at "));
+        Serial.print(F("Log file is closed. Please reset OpenLog Artemis and open a terminal at "));
         Serial.print((String)settings.serialTerminalBaudRate);
         Serial.println(F("bps..."));
         delay(sdPowerDownDelay); // Give the SD card time to shut down
@@ -117,9 +129,13 @@ void menuMain()
   settings.printMajorDebugMessages = prevPrintMajorDebugMessages;
   settings.printMinorDebugMessages = prevPrintMinorDebugMessages;
 
+  settings.enableTerminalOutput = prevTerminalOutput;
+
   recordSettings(); //Once all menus have exited, record the new settings to EEPROM and config file
 
-  beginSensors(); //Once all menus have exited, start any sensors that are available, logging, but not yet online/begun.
+  //Once all menus have exited, start any sensors that are available, logging, but not yet online/begun.
+  //This will re-enable the GNSS debug messages if desired
+  beginSensors();
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 

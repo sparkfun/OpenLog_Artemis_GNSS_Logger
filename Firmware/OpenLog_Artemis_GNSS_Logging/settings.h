@@ -21,33 +21,50 @@ struct struct_uBlox {
   bool enableGAL = true;
   bool enableBDS = true;
   bool enableQZSS = true;
-  bool logUBXNAVCLOCK = false;
-  bool logUBXNAVHPPOSECEF = false;
-  bool logUBXNAVHPPOSLLH = false;
-  bool logUBXNAVODO = false;
-  bool logUBXNAVPOSECEF = false;
-  bool logUBXNAVPOSLLH = false;
-  bool logUBXNAVPVT = true;
-  bool logUBXNAVRELPOSNED = false;
-  bool logUBXNAVSTATUS = false;
-  bool logUBXNAVTIMEUTC = true;
-  bool logUBXNAVVELECEF = false;
-  bool logUBXNAVVELNED = false;
-  bool logUBXNAVDOP = false;
-  bool logUBXNAVATT = false;
-  bool logUBXRXMRAWX = false;
-  bool logUBXRXMSFRBX = false;
-  bool logUBXTIMTM2 = false;
-  bool enableUSB = true;
-  bool enableUART1 = true;
-  bool enableUART2 = true;
-  bool enableSPI = false;
-  uint16_t minMeasIntervalGPS = 50; //Minimum measurement interval in ms when tracking GPS only (20Hz for ZED-F9P)
-  uint16_t minMeasIntervalAll = 125; //Minimum measurement interval in ms when tracking all constallations (8Hz for ZED-F9P)
-  //High-rate RAWX logging is a tricky thing. The ZED-F9P seems happy to log RAWX for all constellations slightly above 5Hz but only if the USB, UARTs and SPI are disabled.
-  //I suspect it is more to do with not overloading the I2C bus, rather than not overloading the module core. RAWX frames can be over 2KB in size.
-  //At 5Hz we are getting very close to overloading the I2C bus at 100kHz. TO DO: set this according to module type?
-  uint16_t minMeasIntervalRAWXAll = 200; //Minimum measurement interval in ms when tracking all constallations and logging RAWX
+  uint8_t logUBXNAVPOSECEF = 0;
+  uint8_t logUBXNAVSTATUS = 0;
+  uint8_t logUBXNAVDOP = 0;
+  uint8_t logUBXNAVATT = 0;
+  uint8_t logUBXNAVPVT = 1; // Default to a PVT rate of 1
+  uint8_t logUBXNAVODO = 0;
+  uint8_t logUBXNAVVELECEF = 0;
+  uint8_t logUBXNAVVELNED = 0;
+  uint8_t logUBXNAVHPPOSECEF = 0;
+  uint8_t logUBXNAVHPPOSLLH = 0;
+  uint8_t logUBXNAVCLOCK = 0;
+  uint8_t logUBXNAVRELPOSNED = 0;
+  uint8_t logUBXRXMSFRBX = 0;
+  uint8_t logUBXRXMRAWX = 0;
+  uint8_t logUBXTIMTM2 = 0;
+  uint8_t logUBXESFMEAS = 0;
+  uint8_t logUBXESFRAW = 0;
+  uint8_t logUBXESFSTATUS = 0;
+  uint8_t logUBXESFALG = 0;
+  uint8_t logUBXESFINS = 0;
+  uint8_t logUBXHNRPVT = 0;
+  uint8_t logUBXHNRATT = 0;
+  uint8_t logUBXHNRINS = 0;
+  uint8_t logNMEADTM = 0;
+  uint8_t logNMEAGAQ = 0;
+  uint8_t logNMEAGBQ = 0;
+  uint8_t logNMEAGBS = 0;
+  uint8_t logNMEAGGA = 0;
+  uint8_t logNMEAGLL = 0;
+  uint8_t logNMEAGLQ = 0;
+  uint8_t logNMEAGNQ = 0;
+  uint8_t logNMEAGNS = 0;
+  uint8_t logNMEAGPQ = 0;
+  uint8_t logNMEAGQQ = 0;
+  uint8_t logNMEAGRS = 0;
+  uint8_t logNMEAGSA = 0;
+  uint8_t logNMEAGST = 0;
+  uint8_t logNMEAGSV = 0;
+  uint8_t logNMEARLM = 0;
+  uint8_t logNMEARMC = 0;
+  uint8_t logNMEATXT = 0;
+  uint8_t logNMEAVLW = 0;
+  uint8_t logNMEAVTG = 0;
+  uint8_t logNMEAZDA = 0;
   uint8_t ubloxI2Caddress = ADR_UBLOX; //Let's store this just in case we want to change it at some point with CFG-I2C-ADDRESS (0x20510001)
 };
 
@@ -75,6 +92,8 @@ struct struct_settings {
   bool enableLowBatteryDetection = false; // Low battery detection
   float lowBatteryThreshold = 3.4; // Low battery voltage threshold (Volts)
   float vinCorrectionFactor = 1.47; //Correction factor for the VIN measurement; to compensate for the divider impedance
+  uint8_t hnrNavigationRate = 1; //HNR Navigation Rate (if supported)
+  bool printGNSSDebugMessages = false;
   struct_uBlox sensor_uBlox;
 } settings;
 
