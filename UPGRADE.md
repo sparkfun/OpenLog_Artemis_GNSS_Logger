@@ -7,12 +7,13 @@ Which is handy if you want to quickly update the firmware in the field, or are n
 
 The firmware is customized for the different versions of the OLA hardware. You will find versions for the **X04 SparkX (Black) OLA** and **V10 SparkFun (Red) OLA** plus any subsequent revisions. The filename tells you which hardware the firmware is for and what version it is:
 
-* OpenLog_Artemis_GNSS_Logging-X04-v10.bin - is the _stable_ version for the **X04 SparkX (Black) OLA**
-* OpenLog_Artemis_GNSS_Logging-X04-v11_BETA.bin - is a _beta_ version for the **X04 SparkX (Black) OLA** containing new features and improvements
+* OpenLog_Artemis_GNSS_Logging-V10-v13.bin - is the _stable_ version for the **V10 SparkFun (Red) OLA**
+* OpenLog_Artemis_GNSS_Logging-X04-v13.bin - is the _stable_ version for the **X04 SparkX (Black) OLA**
+* OpenLog_Artemis_GNSS_Logging-V10-v20_BETA.bin - is a _beta_ version for the **V10 SparkFun (Red) OLA** containing new features and improvements
 
 ## To use:
 
-* Download and extract the [GNSS Logger repo ZIP](https://github.com/sparkfun/OpenLog_Artemis_GNSS_Logger/archive/master.zip)
+* Download and extract the [GNSS Logger repo ZIP](https://github.com/sparkfun/OpenLog_Artemis_GNSS_Logger/archive/main.zip)
 * Download and extract the [AFU repo ZIP](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI/archive/master.zip)
 * Run the AFU artemis_firmware_uploader_gui executable for your platform
   * **/Windows** contains the Windows .exe
