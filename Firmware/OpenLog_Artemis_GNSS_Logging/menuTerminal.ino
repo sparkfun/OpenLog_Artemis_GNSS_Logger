@@ -17,45 +17,49 @@ void menuLogRate()
     Serial.print(settings.serialTerminalBaudRate);
     Serial.println(F(" bps"));
 
-    Serial.print(F("4) Set Log Rate in Hz                                     : "));
+    Serial.print(F("4) Set Standard Message Rate in Hz                        : "));
     if (settings.usBetweenReadings < 1000000ULL) //Take more than one measurement per second
     {
       //Display Integer Hertz
       int logRate = (int)(1000000ULL / settings.usBetweenReadings);
-      Serial.printf("%d\n", logRate);
+      Serial.printf("%d\r\n", logRate);
     }
     else
     {
       //Display fractional Hertz
       uint32_t logRateSeconds = (uint32_t)(settings.usBetweenReadings / 1000000ULL);
-      Serial.printf("%.06lf\n", 1.0 / logRateSeconds);
+      char tempStr[16];
+      olaftoa(1.0 / logRateSeconds, tempStr, 6, sizeof(tempStr) / sizeof(char));
+      Serial.printf("%s\r\n", tempStr);
     }
 
-    Serial.print(F("5) Set Log Rate in seconds between readings               : "));
+    Serial.print(F("5) Set Standard Message Interval in seconds               : "));
     if (settings.usBetweenReadings > 1000000ULL) //Take more than one measurement per second
     {
-        uint32_t interval = (uint32_t)(settings.usBetweenReadings / 1000000ULL);
-        Serial.printf("%d\n", interval);
+      uint32_t interval = (uint32_t)(settings.usBetweenReadings / 1000000ULL);
+      Serial.printf("%d\r\n", interval);
     }
     else
     {
-        float rate = (float)(settings.usBetweenReadings / 1000000.0);
-        Serial.printf("%.06f\n", rate);
+      float rate = (float)(settings.usBetweenReadings / 1000000.0);
+      char tempStr[16];
+      olaftoa(rate, tempStr, 6, sizeof(tempStr) / sizeof(char));
+      Serial.printf("%s\r\n", tempStr);
     }
     
-    Serial.print(F("6) Set logging duration in seconds                        : "));
-    Serial.printf("%llu\n", settings.usLoggingDuration / 1000000ULL);
+    Serial.print(F("6) Set High Navigation Rate in Hz (ADR / UDR Only)        : "));
+    //Display Integer Hertz
+    Serial.printf("%d\r\n", settings.hnrNavigationRate);
 
-    Serial.print(F("7) Set sleep duration in seconds (0 = continuous logging) : "));
-    Serial.printf("%llu\n", settings.usSleepDuration / 1000000ULL);
+    Serial.print(F("7) Set logging duration in seconds                        : "));
+    Serial.printf("%d\r\n", (uint32_t)(settings.usLoggingDuration / 1000000ULL));
 
-    Serial.print(F("8) Open new log file after sleep                          : "));
+    Serial.print(F("8) Set sleep duration in seconds (0 = continuous logging) : "));
+    Serial.printf("%d\r\n", (uint32_t)(settings.usSleepDuration / 1000000ULL));
+
+    Serial.print(F("9) Open new log file after sleep                          : "));
     if (settings.openNewLogFile == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
-
-    Serial.print(F("9) Use pin 32 to Stop Logging                             : "));
-    if (settings.useGPIO32ForStopLogging == true) Serial.println("Yes");
-    else Serial.println("No");
 
     Serial.print(F("10) Frequent log file access timestamps: "));
     if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
@@ -81,18 +85,15 @@ void menuLogRate()
       {
         settings.serialTerminalBaudRate = newBaud;
         recordSettings();
-        Serial.printf("Terminal now set at %dbps. Please reset device and open terminal at new baud rate. Freezing...\n", settings.serialTerminalBaudRate);
+        Serial.printf("Terminal now set at %dbps. Please reset device and open terminal at new baud rate. Freezing...\r\n", settings.serialTerminalBaudRate);
         while (1);
       }
     }
     else if (incoming == 4)
     {
-      float rateLimit = 1.0 / (((float)settings.sensor_uBlox.minMeasIntervalGPS) / 1000.0);
-      int maxOutputRate = (int)rateLimit;
-
-      Serial.printf("How many readings per second would you like to log? (Current max is %d): ", maxOutputRate);
+      Serial.println(F("How many readings per second would you like to log?"));
       int tempRPS = getNumber(menuTimeout); //Timeout after x seconds
-      if (tempRPS < 1 || tempRPS > maxOutputRate)
+      if (tempRPS < 1 || tempRPS > 30)
         Serial.println(F("Error: Readings Per Second out of range"));
       else
         settings.usBetweenReadings = 1000000UL / tempRPS;
@@ -102,10 +103,10 @@ void menuLogRate()
     }
     else if (incoming == 5)
     {
-      Serial.println(F("How many seconds between readings? (1 to 129,600):"));
+      Serial.println(F("How many seconds between readings? (1 to 30):"));
       uint64_t tempSeconds = getNumber(menuTimeout); //Timeout after x seconds
-      if (tempSeconds < 1 || tempSeconds > 129600ULL)
-        Serial.println(F("Error: Readings Per Second out of range"));
+      if (tempSeconds < 1 || tempSeconds > 30ULL)
+        Serial.println(F("Error: Read Interval out of range"));
       else
         //settings.recordPerSecond = tempRPS;
         settings.usBetweenReadings = 1000000ULL * tempSeconds;
@@ -114,6 +115,18 @@ void menuLogRate()
       //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
     }
     else if (incoming == 6)
+    {
+      Serial.println(F("How many HNR readings per second would you like to log?"));
+      int tempRPS = getNumber(menuTimeout); //Timeout after x seconds
+      if (tempRPS < 1 || tempRPS > 30)
+        Serial.println(F("Error: Readings Per Second out of range"));
+      else
+        settings.hnrNavigationRate = tempRPS;
+
+      gnssSettingsChanged = true; //Mark gnss settings as changed so it will be started with new settings
+      //qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
+    }
+    else if (incoming == 7)
     {
       uint64_t secsBetweenReads = settings.usBetweenReadings / 1000000ULL;
       if (secsBetweenReads < 5) secsBetweenReads = 5; //Let's be sensible about this. The module will take ~2 secs to do a hot start anyway.
@@ -124,7 +137,7 @@ void menuLogRate()
       else
         settings.usLoggingDuration = 1000000ULL * tempSeconds;
     }
-    else if (incoming == 7)
+    else if (incoming == 8)
     {
       //The Deep Sleep duration is set with am_hal_stimer_compare_delta_set, the duration of which is uint32_t
       //So the maximum we can sleep for is 2^32 / 32768 = 131072 seconds = 36.4 hours
@@ -136,27 +149,8 @@ void menuLogRate()
       else
         settings.usSleepDuration = 1000000ULL * tempSeconds;
     }
-    else if (incoming == 8)
-      settings.openNewLogFile ^= 1;
     else if (incoming == 9)
-    {
-      if (settings.useGPIO32ForStopLogging == true)
-      {
-        // Disable stop logging
-        settings.useGPIO32ForStopLogging = false;
-        detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
-        pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
-      }
-      else
-      {
-        // Enable stop logging
-        settings.useGPIO32ForStopLogging = true;
-        pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
-        delay(1); // Let the pin stabilize
-        attachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING), stopLoggingISR, FALLING); // Enable the interrupt
-        stopLoggingSeen = false; // Make sure the flag is clear
-      }
-    }
+      settings.openNewLogFile ^= 1;
     else if (incoming == 10)
       settings.frequentFileAccessTimestamps ^= 1;
     else if (incoming == STATUS_PRESSED_X)

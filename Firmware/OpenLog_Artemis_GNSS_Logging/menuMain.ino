@@ -8,6 +8,16 @@ void menuMain()
   bool prevPrintMinorDebugMessages = settings.printMinorDebugMessages;
   settings.printMajorDebugMessages = false;
   settings.printMinorDebugMessages = false;
+
+  //Disable terminal output when menu is open
+  bool prevTerminalOutput = settings.enableTerminalOutput;
+  settings.enableTerminalOutput = false;
+
+  //Disable GNSS debug messages when menu is open
+  if (qwiicOnline.uBlox && qwiicAvailable.uBlox)
+  {
+    gpsSensor_ublox.disableDebugging();
+  }
   
   while (1)
   {
@@ -34,7 +44,7 @@ void menuMain()
 
     Serial.println(F("r) Reset all OLA settings to default"));
 
-    Serial.println("q) Quit: Close log files and power down");
+    Serial.println("q) Quit: Close log file and power down");
 
     Serial.println(F("d) Debug Menu"));
 
@@ -54,7 +64,7 @@ void menuMain()
       openNewLogFile();
     else if (incoming == 'g')
     {
-      Serial.println(F("\n\rResetting GNSS to factory defaults. Continue? Press 'y':"));
+      Serial.println(F("\r\nResetting GNSS to factory defaults. Continue? Press 'y':"));
       byte gContinue = getByteChoice(menuTimeout);
       if (gContinue == 'y')
       {
@@ -71,10 +81,11 @@ void menuMain()
       menuDebug(&prevPrintMajorDebugMessages, &prevPrintMinorDebugMessages);
     else if (incoming == 'r')
     {
-      Serial.println(F("\n\rResetting to factory defaults. Continue? Press 'y':"));
+      Serial.println(F("\r\nResetting settings to factory defaults. Continue? Press 'y':"));
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
+        closeLogFile();
         EEPROM.erase();
         if (sd.exists("OLA_GNSS_settings.cfg"))
           sd.remove("OLA_GNSS_settings.cfg");
@@ -82,19 +93,20 @@ void menuMain()
         Serial.print(F("Settings erased. Please reset OpenLog Artemis and open a terminal at "));
         Serial.print((String)settings.serialTerminalBaudRate);
         Serial.println(F("bps..."));
-        while (1);
+        delay(sdPowerDownDelay); // Give the SD card time to shut down
+        powerDown();
       }
       else
         Serial.println(F("Reset aborted"));
     }
     else if (incoming == 'q')
     {
-      Serial.println("\n\rQuit? Press 'y' to confirm:");
+      Serial.println("\r\nQuit? Press 'y' to confirm:");
       byte bContinue = getByteChoice(menuTimeout);
       if (bContinue == 'y')
       {
         closeLogFile();
-        Serial.print(F("Log files are closed. Please reset OpenLog Artemis and open a terminal at "));
+        Serial.print(F("Log file is closed. Please reset OpenLog Artemis and open a terminal at "));
         Serial.print((String)settings.serialTerminalBaudRate);
         Serial.println(F("bps..."));
         delay(sdPowerDownDelay); // Give the SD card time to shut down
@@ -111,15 +123,19 @@ void menuMain()
       printUnknown(incoming);
   }
 
-  Serial.println(F("\nReturning to logging..."));
+  Serial.println(F("\r\nReturning to logging..."));
   
   //Restore debug messages
   settings.printMajorDebugMessages = prevPrintMajorDebugMessages;
   settings.printMinorDebugMessages = prevPrintMinorDebugMessages;
 
+  settings.enableTerminalOutput = prevTerminalOutput;
+
   recordSettings(); //Once all menus have exited, record the new settings to EEPROM and config file
 
-  beginSensors(); //Once all menus have exited, start any sensors that are available, logging, but not yet online/begun.
+  //Once all menus have exited, start any sensors that are available, logging, but not yet online/begun.
+  //This will re-enable the GNSS debug messages if desired
+  beginSensors();
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
 
@@ -137,7 +153,7 @@ void menuConfigure_QwiicBus()
 
     Serial.print(F("1) Set Max Qwiic Bus Speed          : "));
     Serial.println(settings.qwiicBusMaxSpeed);
-#if(HARDWARE_VERSION_MAJOR >= 1) || (HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
+#if(HARDWARE_VERSION_MAJOR >= 1)
     Serial.print(F("2) Turn off bus power when sleeping : "));
     if (settings.powerDownQwiicBusBetweenReads == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
@@ -149,14 +165,12 @@ void menuConfigure_QwiicBus()
 
     if (incoming == '1')
     {
-      Serial.print(F("Enter max frequency to run Qwiic bus: (100000 to 400000): "));
-      int amt = getNumber(menuTimeout);
-      if (amt >= 100000 && amt <= 400000)
-        settings.qwiicBusMaxSpeed = amt;
+      if (settings.qwiicBusMaxSpeed == 100000)
+        settings.qwiicBusMaxSpeed = 400000;
       else
-        Serial.println(F("Error: Out of range"));
+        settings.qwiicBusMaxSpeed = 100000;
     }
-#if(HARDWARE_VERSION_MAJOR >= 1) || (HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
+#if(HARDWARE_VERSION_MAJOR >= 1)
     else if (incoming == '2')
       settings.powerDownQwiicBusBetweenReads ^= 1;
 #endif

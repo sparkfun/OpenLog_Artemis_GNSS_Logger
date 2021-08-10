@@ -13,6 +13,10 @@ void menuDebug(bool *printMajorDebugMessages, bool *printMinorDebugMessages)
     if (*printMinorDebugMessages == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
+    Serial.print(F("3) GNSS Debug Messages : "));
+    if (settings.printGNSSDebugMessages == true) Serial.println(F("Enabled"));
+    else Serial.println(F("Disabled"));
+
     Serial.println(F("x) Exit"));
 
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
@@ -24,6 +28,10 @@ void menuDebug(bool *printMajorDebugMessages, bool *printMinorDebugMessages)
     else if (incoming == '2')
     {
       *printMinorDebugMessages ^= 1;
+    }
+    else if (incoming == '3')
+    {
+      settings.printGNSSDebugMessages ^= 1;
     }
     else if (incoming == 'x')
       break;

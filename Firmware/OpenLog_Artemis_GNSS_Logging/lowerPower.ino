@@ -20,9 +20,10 @@ void checkBattery(void)
           unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
           while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
           {
-            storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+            storeData();
           }
-      
+
+          storeFinalData();
           gnssDataFile.sync();
       
           updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
@@ -54,12 +55,15 @@ void checkBattery(void)
 //With leakage across the 3.3V protection diode, it's approx 3.00uA.
 void powerDown()
 {
-  detachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS)); //Prevent voltage supervisor from waking us from sleep
+  if (ignorePowerLossInterrupt) //attachInterrupt causes the interrupt to trigger with v2.1.0 of the core. Ignore the interrupt if required.
+    return;
+    
+  detachInterrupt(PIN_POWER_LOSS); //Prevent voltage supervisor from waking us from sleep
 
   //Prevent stop logging button from waking us from sleep
   if (settings.useGPIO32ForStopLogging == true)
   {
-    detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
+    detachInterrupt(PIN_STOP_LOGGING); // Disable the interrupt
     pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
   }
 
@@ -76,7 +80,7 @@ void powerDown()
 
   SPI.end(); //Power down SPI
 
-  power_adc_disable(); //Power down ADC. It it started by default before setup().
+  powerControlADC(false); //Power down ADC. It it started by default before setup().
 
   Serial.end(); //Power down UART
 
@@ -94,11 +98,11 @@ void powerDown()
   //Disable pads
   for (int x = 0; x < 50; x++)
   {
-    if ((x != ap3_gpio_pin2pad(PIN_POWER_LOSS)) &&
-      //(x != ap3_gpio_pin2pad(PIN_LOGIC_DEBUG)) &&
-      (x != ap3_gpio_pin2pad(PIN_MICROSD_POWER)) &&
-      (x != ap3_gpio_pin2pad(PIN_QWIIC_POWER)) &&
-      (x != ap3_gpio_pin2pad(PIN_IMU_POWER)))
+    if ((x != PIN_POWER_LOSS) &&
+        //(x != PIN_LOGIC_DEBUG) &&
+        (x != PIN_MICROSD_POWER) &&
+        (x != PIN_QWIIC_POWER) &&
+        (x != PIN_IMU_POWER))
     {
       am_hal_gpio_pinconfig(x, g_AM_HAL_GPIO_DISABLE);
     }
@@ -123,11 +127,9 @@ void powerDown()
   qwiicPowerOff();
 #endif
 
-  //Power down Flash, SRAM, cache
-  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_CACHE); //Turn off CACHE
-  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_FLASH_512K); //Turn off everything but lower 512k
-  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_SRAM_64K_DTCM); //Turn off everything but lower 64k //TO DO: check this! GNSSbuffer is 24K!
-  //am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_ALL); //Turn off all memory (doesn't recover)
+  //Power down cache, flash, SRAM
+  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_ALL); // Power down all flash and cache
+  am_hal_pwrctrl_memory_deepsleep_retain(AM_HAL_PWRCTRL_MEM_SRAM_384K); // Retain all SRAM
 
   //Keep the 32kHz clock running for RTC
   am_hal_stimer_config(AM_HAL_STIMER_CFG_CLEAR | AM_HAL_STIMER_CFG_FREEZE);
@@ -142,7 +144,64 @@ void powerDown()
 //Power everything down and wait for interrupt wakeup
 void goToSleep()
 {
+  detachInterrupt(PIN_POWER_LOSS); //Prevent voltage supervisor from waking us from sleep
+
+  //Prevent stop logging button from waking us from sleep
+  if (settings.useGPIO32ForStopLogging == true)
+  {
+    detachInterrupt(PIN_STOP_LOGGING); // Disable the interrupt
+    pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
+  }
+  
+  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
+  {
+    //Disable all messages otherwise they will fill up the module's I2C buffer while we are asleep
+    //(Possibly redundant if using a power management task?)
+    disableMessages(1100);
+    //Using a maxWait of zero means we don't wait for the ACK/NACK
+    //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
+  }
+
+  //Save files before going to sleep
+  if (online.dataLogging == true)
+  {
+    unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
+    while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
+    {
+      storeData();
+    }
+
+    storeFinalData();
+    gnssDataFile.sync();
+
+    updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
+
+    gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
+
+    delay(sdPowerDownDelay); // Give the SD card time to finish writing ***** THIS IS CRITICAL *****
+  }
+
   uint32_t msToSleep = (uint32_t)(settings.usSleepDuration / 1000ULL);
+
+  //Check if we are using a power management task to put the module to sleep
+  if (qwiicAvailable.uBlox && qwiicOnline.uBlox && (settings.sensor_uBlox.powerManagement == true))
+  {
+    powerManagementTask((msToSleep - 1000), 0); // Wake the module up 1s before the Artemis so it is ready to rock
+    //UBX_RXM_PMREQ does not ACK so there is no point in checking the return value
+    if (settings.printMajorDebugMessages == true)
+    {
+      Serial.println(F("goToSleep: powerManagementTask request sent")); 
+    }             
+  }
+
+  //qwiic.end(); //DO NOT Power down I2C - causes badness with v2.1 of the core: https://github.com/sparkfun/Arduino_Apollo3/issues/412
+
+  SPI.end(); //Power down SPI
+
+  powerControlADC(false); //Power down ADC. It it started by default before setup().
+
+  Serial.flush(); //Finish any prints
+  Serial.end(); //Power down UART
 
   //Counter/Timer 6 will use the 32kHz clock
   //Calculate how many 32768Hz system ticks we need to sleep for:
@@ -160,87 +219,42 @@ void goToSleep()
     sysTicksToSleep = sysTicksToSleep * 32768L; // Now do the multiply
   }
   
-  detachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS)); //Prevent voltage supervisor from waking us from sleep
-
-  //Prevent stop logging button from waking us from sleep
-  if (settings.useGPIO32ForStopLogging == true)
-  {
-    detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
-    pinMode(PIN_STOP_LOGGING, INPUT); // Remove the pull-up
-  }
-  
-  if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
-  {
-    //Disable all messages in RAM otherwise they will fill up the module's I2C buffer while we are asleep
-    //(Possibly redundant if using a power management task?)
-    disableMessages(0);
-    //Using a maxWait of zero means we don't wait for the ACK/NACK
-    //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
-  }
-
-  //Save files before going to sleep
-  if (online.dataLogging == true)
-  {
-    unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
-    while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
-    {
-      storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
-    }
-
-    gnssDataFile.sync();
-
-    updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
-
-    gnssDataFile.close(); //No need to close files. https://forum.arduino.cc/index.php?topic=149504.msg1125098#msg1125098
-
-    delay(sdPowerDownDelay); // Give the SD card time to finish writing ***** THIS IS CRITICAL *****
-  }
-
-  //Check if we are using a power management task to put the module to sleep
-  if (qwiicAvailable.uBlox && qwiicOnline.uBlox && (settings.sensor_uBlox.powerManagement == true))
-  {
-    powerManagementTask((msToSleep - 1000), 0); // Wake the module up 1s before the Artemis so it is ready to rock
-    //UBX_RXM_PMREQ does not ACK so there is no point in checking the return value
-    if (settings.printMajorDebugMessages == true)
-    {
-      Serial.println(F("goToSleep: powerManagementTask request sent")); 
-    }             
-  }
-
-  Serial.flush(); //Finish any prints
-
-  //  Wire.end(); //Power down I2C
-  qwiic.end(); //Power down I2C
-
-  SPI.end(); //Power down SPI
-
-  power_adc_disable(); //Power down ADC. It it started by default before setup().
-
-  Serial.end(); //Power down UART
-
   //Force the peripherals off
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM0);
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM1);
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM2);
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM3);
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM4);
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM5);
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_ADC);
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_UART0);
-  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_UART1);
 
-  //Disable pads
-  for (int x = 0; x < 50; x++)
+  //With v2.1 of the core, very bad things happen if the IOMs are disabled.
+  //We must leave them enabled: https://github.com/sparkfun/Arduino_Apollo3/issues/412
+  //am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM0); // SPI
+  //am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM1); // qwiic I2C
+  //am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM2);
+  //am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM3);
+  //am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM4);
+  //am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_IOM5);
+  //am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_UART0);
+  //if (settings.useTxRxPinsForTerminal == true)
+  //  am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_UART1);
+
+  //Disable as many pins as we can
+  const int pinsToDisable[] = {0,1,2,10,14,17,12,24,25,28,36,38,39,40,41,42,43,45,21,22,16,31,35,-1};
+  for (int x = 0; pinsToDisable[x] >= 0; x++)
   {
-    if ((x != ap3_gpio_pin2pad(PIN_POWER_LOSS)) &&
-      //(x != ap3_gpio_pin2pad(PIN_LOGIC_DEBUG)) &&
-      (x != ap3_gpio_pin2pad(PIN_MICROSD_POWER)) &&
-      (x != ap3_gpio_pin2pad(PIN_QWIIC_POWER)) &&
-      (x != ap3_gpio_pin2pad(PIN_IMU_POWER)))
-    {
-      am_hal_gpio_pinconfig(x, g_AM_HAL_GPIO_DISABLE);
-    }
+    am_hal_gpio_pinconfig(pinsToDisable[x], g_AM_HAL_GPIO_DISABLE);
   }
+
+  //Do disable CIPO, COPI, SCLK and chip selects to minimise the current draw during deep sleep
+  am_hal_gpio_pinconfig(PIN_SPI_CIPO , g_AM_HAL_GPIO_DISABLE); //ICM / microSD CIPO
+  am_hal_gpio_pinconfig(PIN_SPI_COPI , g_AM_HAL_GPIO_DISABLE); //ICM / microSD COPI
+  am_hal_gpio_pinconfig(PIN_SPI_SCK , g_AM_HAL_GPIO_DISABLE); //ICM / microSD SCK
+  am_hal_gpio_pinconfig(PIN_IMU_CHIP_SELECT , g_AM_HAL_GPIO_DISABLE); //ICM CS
+  am_hal_gpio_pinconfig(PIN_IMU_INT , g_AM_HAL_GPIO_DISABLE); //ICM INT
+  am_hal_gpio_pinconfig(PIN_MICROSD_CHIP_SELECT , g_AM_HAL_GPIO_DISABLE); //microSD CS
+
+  //Do disable qwiic SDA and SCL to minimise the current draw during deep sleep
+  am_hal_gpio_pinconfig(PIN_QWIIC_SDA , g_AM_HAL_GPIO_DISABLE);
+  am_hal_gpio_pinconfig(PIN_QWIIC_SCL , g_AM_HAL_GPIO_DISABLE);
+
+  //Disable pins 48 and 49 (UART0) to stop them back-feeding the CH340
+  am_hal_gpio_pinconfig(48 , g_AM_HAL_GPIO_DISABLE); //TX0
+  am_hal_gpio_pinconfig(49 , g_AM_HAL_GPIO_DISABLE); //RX0
 
   //Make sure PIN_POWER_LOSS is configured as an input for the WDT
   pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
@@ -249,63 +263,47 @@ void goToSleep()
   imuPowerOff();
   microSDPowerOff();
 
-  //Testing file record issues
-  //microSDPowerOn();
-
   //Keep Qwiic bus powered on if user desires it
   if (settings.powerDownQwiicBusBetweenReads == true)
-  {
     qwiicPowerOff();
-    qwiicOnline.uBlox = false; //Mark as offline so it will be started with new settings
-  }
   else
     qwiicPowerOn(); //Make sure pins stays as output
 
   //Leave the power LED on if the user desires it
   if (settings.enablePwrLedDuringSleep == true)
     powerLEDOn();
-  //else
-  //  powerLEDOff();
+  else
+    powerLEDOff();
 
-  //Power down Flash, SRAM, cache
-  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_CACHE); //Turn off CACHE
-  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_FLASH_512K); //Turn off everything but lower 512k
-  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_SRAM_64K_DTCM); //Turn off everything but lower 64k //TO DO: check this! GNSSbuffer is 24K!
-  //am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_ALL); //Turn off all memory (doesn't recover)
+  //Power down cache, flash, SRAM
+  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_ALL); // Power down all flash and cache
+  am_hal_pwrctrl_memory_deepsleep_retain(AM_HAL_PWRCTRL_MEM_SRAM_384K); // Retain all SRAM
 
   //Use the lower power 32kHz clock. Use it to run CT6 as well.
   am_hal_stimer_config(AM_HAL_STIMER_CFG_CLEAR | AM_HAL_STIMER_CFG_FREEZE);
   am_hal_stimer_config(AM_HAL_STIMER_XTAL_32KHZ | AM_HAL_STIMER_CFG_COMPARE_G_ENABLE);
 
-  //Adjust sysTicks down by the amount we've be at 48MHz
-  uint32_t msBeenAwake = millis();
-  uint32_t sysTicksAwake = msBeenAwake * 32768L / 1000L; //Convert to 32kHz systicks
-  sysTicksToSleep -= sysTicksAwake;
+  //Check that sysTicksToSleep is >> sysTicksAwake
+  if (sysTicksToSleep > 3277) // Abort if we are trying to sleep for < 100ms
+  {
+    //Setup interrupt to trigger when the number of ms have elapsed
+    am_hal_stimer_compare_delta_set(6, sysTicksToSleep);
 
-  //Setup interrupt to trigger when the number of ms have elapsed
-  am_hal_stimer_compare_delta_set(6, sysTicksToSleep);
+    //We use counter/timer 6 to cause us to wake up from sleep but 0 to 7 are available
+    //CT 7 is used for Software Serial. All CTs are used for Servo.
+    am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREG);  //Clear CT6
+    am_hal_stimer_int_enable(AM_HAL_STIMER_INT_COMPAREG); //Enable C/T G=6
 
-  //We use counter/timer 6 to cause us to wake up from sleep but 0 to 7 are available
-  //CT 7 is used for Software Serial. All CTs are used for Servo.
-  am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREG); //Clear CT6
-  am_hal_stimer_int_enable(AM_HAL_STIMER_INT_COMPAREG); //Enable C/T G=6
+    //Enable the timer interrupt in the NVIC.
+    NVIC_EnableIRQ(STIMER_CMPR6_IRQn);
 
-  //Enable the timer interrupt in the NVIC.
-  NVIC_EnableIRQ(STIMER_CMPR6_IRQn);
+    //Deep Sleep
+    am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
 
-  //Halt the WDT otherwise this will bring us out of deep sleep
-  am_hal_wdt_halt();
-
-  //Deep Sleep
-  am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
-
-  //(Re)start the WDT
-  am_hal_wdt_start();
-
-  //Turn off interrupt
-  NVIC_DisableIRQ(STIMER_CMPR6_IRQn);
-
-  am_hal_stimer_int_disable(AM_HAL_STIMER_INT_COMPAREG); //Enable C/T G=6
+    //Turn off interrupt
+    NVIC_DisableIRQ(STIMER_CMPR6_IRQn);
+    am_hal_stimer_int_disable(AM_HAL_STIMER_INT_COMPAREG); //Disable C/T G=6
+  }
 
   //We're BACK!
   wakeFromSleep();
@@ -314,38 +312,45 @@ void goToSleep()
 //Power everything up gracefully
 void wakeFromSleep()
 {
-  //Power up SRAM, turn on entire Flash
-  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_MAX);
-
   //Go back to using the main clock
   //am_hal_stimer_int_enable(AM_HAL_STIMER_INT_OVERFLOW);
   //NVIC_EnableIRQ(STIMER_IRQn);
   am_hal_stimer_config(AM_HAL_STIMER_CFG_CLEAR | AM_HAL_STIMER_CFG_FREEZE);
   am_hal_stimer_config(AM_HAL_STIMER_HFRC_3MHZ);
 
+  // Power up SRAM, turn on entire Flash
+  am_hal_pwrctrl_memory_deepsleep_powerdown(AM_HAL_PWRCTRL_MEM_MAX);
+
   //Turn on ADC
-  ap3_adc_setup();
+  powerControlADC(true);
 
   //Run setup again
 
-  //If 3.3V rail drops below 3V, system will enter low power mode and maintain RTC
+  //If 3.3V rail drops below 3V, system will power down and maintain RTC
   pinMode(PIN_POWER_LOSS, INPUT); // BD49K30G-TL has CMOS output and does not need a pull-up
-
+  pin_config(PinName(PIN_POWER_LOSS), g_AM_HAL_GPIO_INPUT); // Make sure the pin does actually get re-configured
+  
   delay(1); // Let PIN_POWER_LOSS stabilize
 
-  attachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS), powerDown, FALLING);
-
   if (digitalRead(PIN_POWER_LOSS) == LOW) powerDown(); //Check PIN_POWER_LOSS just in case we missed the falling edge
+  ignorePowerLossInterrupt = true; // Ignore the power loss interrupt - when attaching the interrupt
+  attachInterrupt(digitalPinToInterrupt(PIN_POWER_LOSS), powerDown, FALLING);
+  ignorePowerLossInterrupt = false;
 
   if (settings.useGPIO32ForStopLogging == true)
   {
     pinMode(PIN_STOP_LOGGING, INPUT_PULLUP);
+    pin_config(PinName(PIN_STOP_LOGGING), g_AM_HAL_GPIO_INPUT_PULLUP); // Make sure the pin does actually get re-configured
     delay(1); // Let the pin stabilize
-    attachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING), stopLoggingISR, FALLING); // Enable the interrupt
+    attachInterrupt(PIN_STOP_LOGGING, stopLoggingISR, FALLING); // Enable the interrupt
+    am_hal_gpio_pincfg_t intPinConfig = g_AM_HAL_GPIO_INPUT_PULLUP;
+    intPinConfig.eIntDir = AM_HAL_GPIO_PIN_INTDIR_HI2LO;
+    pin_config(PinName(PIN_STOP_LOGGING), intPinConfig); // Make sure the pull-up does actually stay enabled
     stopLoggingSeen = false; // Make sure the flag is clear
   }
 
   pinMode(PIN_STAT_LED, OUTPUT);
+  pin_config(PinName(PIN_STAT_LED), g_AM_HAL_GPIO_OUTPUT); // Make sure the pin does actually get re-configured
   digitalWrite(PIN_STAT_LED, LOW);
 
   powerLEDOn();
@@ -356,13 +361,29 @@ void wakeFromSleep()
     digitalWrite(PIN_LOGIC_DEBUG, HIGH); //Make this high, trigger debug on falling edge
   }
 
+  //Re-enable pins 48 and 49 (UART0)
+  pin_config(PinName(48), g_AM_BSP_GPIO_COM_UART_TX);    
+  pin_config(PinName(49), g_AM_BSP_GPIO_COM_UART_RX);
+
+  //Re-enable CIPO, COPI, SCK and the chip selects but may as well leave ICM_INT disabled
+  pin_config(PinName(PIN_SPI_CIPO), g_AM_BSP_GPIO_IOM0_MISO);
+  pin_config(PinName(PIN_SPI_COPI), g_AM_BSP_GPIO_IOM0_MOSI);
+  pin_config(PinName(PIN_SPI_SCK), g_AM_BSP_GPIO_IOM0_SCK);
+  pin_config(PinName(PIN_IMU_CHIP_SELECT), g_AM_HAL_GPIO_OUTPUT);
+  pin_config(PinName(PIN_MICROSD_CHIP_SELECT) , g_AM_HAL_GPIO_OUTPUT);
+
+  //Re-enable the SDA and SCL pins
+  pin_config(PinName(PIN_QWIIC_SCL), g_AM_BSP_GPIO_IOM1_SCL);
+  pin_config(PinName(PIN_QWIIC_SDA), g_AM_BSP_GPIO_IOM1_SDA);
+
   Serial.begin(settings.serialTerminalBaudRate);
+
+  beginQwiic(); //Power up Qwiic bus as early as possible
 
   SPI.begin(); //Needed if SD is disabled
 
   beginSD(); //285 - 293ms
 
-  beginQwiic();
   for (int i = 0; i < 250; i++) // Allow extra time for the qwiic sensors to power up
   {
     checkBattery(); // Check for low battery
@@ -380,18 +401,18 @@ void wakeFromSleep()
   else
   {
     //Module is still online so (re)enable the selected messages
-    enableMessages(2100);
+    enableMessages(1100);
   }
 }
 
 void stopLogging(void)
 {
-  detachInterrupt(digitalPinToInterrupt(PIN_STOP_LOGGING)); // Disable the interrupt
+  detachInterrupt(PIN_STOP_LOGGING); // Disable the interrupt
   
   if (qwiicAvailable.uBlox && qwiicOnline.uBlox) //If the u-blox is available and logging
   {
-    //Disable all messages in RAM
-    disableMessages(0);
+    //Disable all messages
+    disableMessages(1100);
     //Using a maxWait of zero means we don't wait for the ACK/NACK
     //and success will always be false (sendCommand returns SFE_UBLOX_STATUS_SUCCESS not SFE_UBLOX_STATUS_DATA_SENT)
   }
@@ -402,9 +423,10 @@ void stopLogging(void)
     unsigned long pauseUntil = millis() + 550UL; //Wait > 500ms so we can be sure SD data is sync'd
     while (millis() < pauseUntil) //While we are pausing, keep writing data to SD
     {
-      storeData(); //storeData is the workhorse. It reads I2C data and writes it to SD.
+      storeData();
     }
 
+    storeFinalData();
     gnssDataFile.sync();
 
     updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
@@ -424,10 +446,6 @@ void qwiicPowerOn()
   pinMode(PIN_QWIIC_POWER, OUTPUT);
 #if(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 4)
   digitalWrite(PIN_QWIIC_POWER, LOW);
-#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 5)
-  digitalWrite(PIN_QWIIC_POWER, LOW);
-#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
-  digitalWrite(PIN_QWIIC_POWER, HIGH);
 #elif(HARDWARE_VERSION_MAJOR == 1 && HARDWARE_VERSION_MINOR == 0)
   digitalWrite(PIN_QWIIC_POWER, HIGH);
 #endif
@@ -437,10 +455,6 @@ void qwiicPowerOff()
   pinMode(PIN_QWIIC_POWER, OUTPUT);
 #if(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 4)
   digitalWrite(PIN_QWIIC_POWER, HIGH);
-#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 5)
-  digitalWrite(PIN_QWIIC_POWER, HIGH);
-#elif(HARDWARE_VERSION_MAJOR == 0 && HARDWARE_VERSION_MINOR == 6)
-  digitalWrite(PIN_QWIIC_POWER, LOW);
 #elif(HARDWARE_VERSION_MAJOR == 1 && HARDWARE_VERSION_MINOR == 0)
   digitalWrite(PIN_QWIIC_POWER, LOW);
 #endif

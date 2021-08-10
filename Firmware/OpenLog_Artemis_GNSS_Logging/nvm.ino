@@ -57,7 +57,15 @@ void recordSettingsToFile()
     if (sd.exists("OLA_GNSS_settings.cfg"))
       sd.remove("OLA_GNSS_settings.cfg");
 
-    SdFile settingsFile;
+    #if SD_FAT_TYPE == 1
+    File32 settingsFile;
+    #elif SD_FAT_TYPE == 2
+    ExFile settingsFile;
+    #elif SD_FAT_TYPE == 3
+    FsFile settingsFile;
+    #else // SD_FAT_TYPE == 0
+    File settingsFile;
+    #endif  // SD_FAT_TYPE
     if (settingsFile.open("OLA_GNSS_settings.cfg", O_CREAT | O_APPEND | O_WRITE) == false)
     {
       Serial.println("Failed to create settings file");
@@ -159,8 +167,10 @@ void recordSettingsToFile()
     settingsFile.println("useGPIO32ForStopLogging=" + (String)settings.useGPIO32ForStopLogging);
     settingsFile.println("frequentFileAccessTimestamps=" + (String)settings.frequentFileAccessTimestamps);
     settingsFile.println("enableLowBatteryDetection=" + (String)settings.enableLowBatteryDetection);
-    settingsFile.println("lowBatteryThreshold=" + (String)settings.lowBatteryThreshold);
-    settingsFile.println("vinCorrectionFactor=" + (String)settings.vinCorrectionFactor);
+    settingsFile.print("lowBatteryThreshold="); settingsFile.println(settings.lowBatteryThreshold);
+    settingsFile.print("vinCorrectionFactor="); settingsFile.println(settings.vinCorrectionFactor);
+    settingsFile.print("hnrNavigationRate="); settingsFile.println(settings.hnrNavigationRate);
+    settingsFile.print("printGNSSDebugMessages="); settingsFile.println(settings.printGNSSDebugMessages);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
     settingsFile.close();
@@ -177,7 +187,15 @@ bool loadSettingsFromFile()
   {
     if (sd.exists("OLA_GNSS_settings.cfg"))
     {
-      SdFile settingsFile;
+      #if SD_FAT_TYPE == 1
+      File32 settingsFile;
+      #elif SD_FAT_TYPE == 2
+      ExFile settingsFile;
+      #elif SD_FAT_TYPE == 3
+      FsFile settingsFile;
+      #else // SD_FAT_TYPE == 0
+      File settingsFile;
+      #endif  // SD_FAT_TYPE
       if (settingsFile.open("OLA_GNSS_settings.cfg", O_READ) == false)
       {
         Serial.println("Failed to open settings file");
@@ -190,10 +208,10 @@ bool loadSettingsFromFile()
       while (settingsFile.available()) {
         int n = settingsFile.fgets(line, sizeof(line));
         if (n <= 0) {
-          Serial.printf("Failed to read line %d from settings file\n", lineNumber);
+          Serial.printf("Failed to read line %d from settings file\r\n", lineNumber);
         }
         else if (line[n - 1] != '\n' && n == (sizeof(line) - 1)) {
-          Serial.printf("Settings line %d too long\n", lineNumber);
+          Serial.printf("Settings line %d too long\r\n", lineNumber);
           if (lineNumber == 0)
           {
             //If we can't read the first line of the settings file, give up
@@ -202,7 +220,7 @@ bool loadSettingsFromFile()
           }
         }
         else if (parseLine(line) == false) {
-          Serial.printf("Failed to parse line %d: %s\n", lineNumber, line);
+          Serial.printf("Failed to parse line %d: %s\r\n", lineNumber, line);
           if (lineNumber == 0)
           {
             //If we can't read the first line of the settings file, give up
@@ -257,14 +275,14 @@ bool parseLine(char* str) {
   str = strtok(nullptr, "\n");
   if (!str) return false;
 
-  //Serial.printf("s = %s\n", str);
+  //Serial.printf("s = %s\r\n", str);
   //Serial.flush();
 
   // Convert string to double.
   double d = strtod(str, &ptr);
   if (str == ptr || *skipSpace(ptr)) return false;
 
-  //Serial.printf("d = %lf\n", d);
+  //Serial.printf("d = %lf\r\n", d);
   //Serial.flush();
 
   // Get setting name
@@ -282,7 +300,7 @@ bool parseLine(char* str) {
 
     //Check to see if this setting file is compatible with this version of OLA
     if (d != sizeof(settings))
-      Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\n", d, sizeof(settings));
+      Serial.printf("Warning: Settings size is %d but current firmware expects %d. Attempting to use settings from file.\r\n", d, sizeof(settings));
 
   }
   else if (strcmp(settingName, "olaIdentifier") == 0)
@@ -327,6 +345,10 @@ bool parseLine(char* str) {
     settings.lowBatteryThreshold = d;
   else if (strcmp(settingName, "vinCorrectionFactor") == 0)
     settings.vinCorrectionFactor = d;
+  else if (strcmp(settingName, "hnrNavigationRate") == 0)
+    settings.hnrNavigationRate = d;
+  else if (strcmp(settingName, "printGNSSDebugMessages") == 0)
+    settings.printGNSSDebugMessages = d;
   else
   {
     Serial.print("Unknown setting: ");
