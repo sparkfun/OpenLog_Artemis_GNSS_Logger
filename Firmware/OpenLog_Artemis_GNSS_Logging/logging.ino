@@ -18,7 +18,18 @@ char* findNextAvailableLog(int &newFileNumber, const char *fileLeader)
   static char newFileName[40];
   while (1)
   {
-    sprintf(newFileName, "%s%05u.ubx", fileLeader, newFileNumber); //Splice the new file number into this file name
+    char newFileNumberStr[6];
+    if (newFileNumber < 10)
+      sprintf(newFileNumberStr, "0000%d", newFileNumber);
+    else if (newFileNumber < 100)
+      sprintf(newFileNumberStr, "000%d", newFileNumber);
+    else if (newFileNumber < 1000)
+      sprintf(newFileNumberStr, "00%d", newFileNumber);
+    else if (newFileNumber < 10000)
+      sprintf(newFileNumberStr, "0%d", newFileNumber);
+    else
+      sprintf(newFileNumberStr, "%d", newFileNumber);
+    sprintf(newFileName, "%s%s.ubx", fileLeader, newFileNumberStr); //Splice the new file number into this file name. Max no. is 99999.
 
 //    if (settings.printMinorDebugMessages == true)
 //    {

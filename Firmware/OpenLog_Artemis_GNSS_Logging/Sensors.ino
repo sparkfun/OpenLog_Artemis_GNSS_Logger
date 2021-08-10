@@ -18,11 +18,11 @@ bool beginSensors()
     gnssSettingsChanged = false;
     gpsSensor_ublox.setFileBufferSize(FILE_BUFFER_SIZE); // setFileBufferSize must be called _before_ .begin
     
-    gpsSensor_ublox.setPacketCfgPayloadSize(8192); // Needs to be large enough to hold a full RAWX frame
+    gpsSensor_ublox.setPacketCfgPayloadSize(MAX_PAYLOAD_SIZE > 8192 ? MAX_PAYLOAD_SIZE : 8192); // Needs to be large enough to hold a full RAWX frame
 
     if (settings.printGNSSDebugMessages) //Enable debug messages if desired
       gpsSensor_ublox.enableDebugging(Serial, !settings.printMinorDebugMessages);
-      
+
     if (gpsSensor_ublox.begin(qwiic, settings.sensor_uBlox.ubloxI2Caddress) == true) //Wire port, Address. Default is 0x42.
     {
       // Try up to three times to get the module info
@@ -126,8 +126,8 @@ bool beginSensors()
       //Set the HNR rate
       gpsSensor_ublox.setHNRNavigationRate(settings.hnrNavigationRate);
 
-      //Enable the selected messages in RAM (MaxWait 2100)
-      enableMessages(2100);
+      //Enable the selected messages
+      enableMessages(1100);
 
       qwiicOnline.uBlox = true;
     }
@@ -228,8 +228,8 @@ void openNewLogFile()
 
       updateDataFileCreate(&gnssDataFile); //Update the file create time stamp
 
-      //(Re)Enable the selected messages in RAM (MaxWait 2100)
-      enableMessages(2100);
+      //(Re)Enable the selected messages
+      enableMessages(1100);
     }
   }
 }
@@ -372,6 +372,7 @@ void disableMessages(uint16_t maxWait)
   //gpsSensor_ublox.setAutoRXMRAWXcallback(&callbackRXMRAWX, maxWait);
   gpsSensor_ublox.setAutoRXMRAWXrate(0, false, maxWait);
   gpsSensor_ublox.logRXMRAWX(false);
+  gpsSensor_ublox.disableUBX7Fcheck(false);
 
   //gpsSensor_ublox.setAutoTIMTM2callback(&callbackTIMTM2, maxWait);
   gpsSensor_ublox.setAutoTIMTM2rate(0, false, maxWait);

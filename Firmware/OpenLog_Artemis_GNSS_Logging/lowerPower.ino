@@ -194,15 +194,13 @@ void goToSleep()
     }             
   }
 
-  Serial.flush(); //Finish any prints
-
-  //  Wire.end(); //Power down I2C
-  qwiic.end(); //Power down I2C
+  //qwiic.end(); //DO NOT Power down I2C - causes badness with v2.1 of the core: https://github.com/sparkfun/Arduino_Apollo3/issues/412
 
   SPI.end(); //Power down SPI
 
   powerControlADC(false); //Power down ADC. It it started by default before setup().
 
+  Serial.flush(); //Finish any prints
   Serial.end(); //Power down UART
 
   //Counter/Timer 6 will use the 32kHz clock
@@ -380,11 +378,12 @@ void wakeFromSleep()
 
   Serial.begin(settings.serialTerminalBaudRate);
 
+  beginQwiic(); //Power up Qwiic bus as early as possible
+
   SPI.begin(); //Needed if SD is disabled
 
   beginSD(); //285 - 293ms
 
-  beginQwiic();
   for (int i = 0; i < 250; i++) // Allow extra time for the qwiic sensors to power up
   {
     checkBattery(); // Check for low battery
@@ -402,7 +401,7 @@ void wakeFromSleep()
   else
   {
     //Module is still online so (re)enable the selected messages
-    enableMessages(2100);
+    enableMessages(1100);
   }
 }
 

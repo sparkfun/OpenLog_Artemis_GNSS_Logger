@@ -4,24 +4,24 @@
   Date: July 17th, 2021
   Version: V2.0
 
-  This firmware runs on the OpenLog Artemis and is dedicated to logging UBX
-  messages from the u-blox F9 and M9 GNSS receivers.
+  This firmware runs on the OpenLog Artemis and is dedicated to logging UBX and NMEA
+  messages from the u-blox series 8, 9 and 10 GNSS receivers.
 
   This version uses v2.1.0 of the SparkFun Apollo3 (artemis) core.
   
   Please note: v2.1.1 of the core contains a change to the I2C interface which makes communication
-  with the ZED-F9P less reliable. If you are building this code yourself, please use V2.1.0 of the core.
+  with u-blox modules over I2C less reliable. If you are building this code yourself,
+  please use V2.1.0 of the core.
   
-  The Board should be set to SparkFun Apollo3 \ SparkFun RedBoard Artemis ATP.
+  The Board should be set to SparkFun Apollo3 \ RedBoard Artemis ATP.
 
-  Messages are streamed directly to SD in UBX format without being processed.
+  Messages are streamed directly to SD in UBX/NMEA format without being processed.
   The SD log files can be analysed afterwards with (e.g.) u-center or RTKLIB.
 
   You can disable SD card logging if you want to (menu 1 option 1).
   By default, abbreviated UBX messages are displayed in the serial monitor with timestamps.
   You can disable this with menu 1 option 2.
   The message interval can be adjusted (menu 1 option 4 | 5).
-  The minimum message interval is adjusted according to which module you have attached.
   The logging duration and sleep duration can be adjusted (menu 1 option 6 & 7).
   If you want the logger to log continuously, set the sleep duration to zero.
   If you want the logger to open a new log file after sleeping, use menu 1 option 8.
@@ -32,13 +32,8 @@
   a power management task, or switch off the Qwiic power.
   Option 2 enables / disables the power management task. The task duration is set
   to one second less than the sleep duration so the module will be ready when the OLA wakes up.
-  Individual messages can be enabled / disabled with options 10-60.
-  Leave the UBX-NAV-TIMEUTC message enabled if you want the OLA to set its RTC from GNSS.
-  Disabling the USB/UART/SPI ports can reduce the load on the module and give improved
-  performance when logging RAWX data at high rates. You can enable / disable the ports
-  with options 90-93.
-  You will only see messages which are available on your module. E.g. the RAWX message
-  will be hidden if you do not have a HPG (ZED-F9P), TIM (ZED-F9T) or FTS module attached.
+  Individual messages can be enabled / disabled.
+  Leave the UBX-NAV-PVT message enabled if you want the OLA to set its RTC from GNSS.
   You can selectively enable/disable GPS, Galileo, BeiDou, GLONASS and QZSS.
   For fast log rates, you may need to disable all constellations except GPS - but this is
   module-dependent.
@@ -63,36 +58,17 @@
   The settings are stored in a file called OLA_GNSS_settings.cfg.
   (The settings for the regular OpenLog_Artemis are stored separately in OLA_settings.cfg)
 
-  All GNSS configuration is done using UBX-CFG-VALSET and UBX-CFG-VALGET
-  which is only supported on devices like the ZED-F9P and
-  NEO-M9N running communication protocols greater than 27.01.
-
-  Only UBX data is logged to SD. ACKs and NACKs are automatically stripped out.
+  Only UBX/NMEA data is logged to SD. ACKs and NACKs are automatically stripped out.
 
   Based extensively on:
   OpenLog Artemis
   By: Nathan Seidle
   SparkFun Electronics
   Date: November 26th, 2019
-  License: This code is public domain but you buy me a beer if you use this
-  and we meet someday (Beerware license).
   Feel like supporting our work? Buy a board from SparkFun!
   https://www.sparkfun.com/products/16832
 
-  Version history:
-  V2.0 :  Update using v2.1.0 of the SparkFun Apollo3 (Artemis) core and v2.0.9 of the SparkFun u-blox GNSS library
-  V1.3 :  Fixed the I2C_BUFFER_LENGTH gremlin in storeData.ino (thank you @adamgarbo)
-          Added improved log file timestamping - same as the OLA
-          Add functionality to enable/disable GNSS constellations (thank you @adamgarbo)
-          Add low battery detection
-          Added support for NAV_DOP
-          Added support for NAV_ATT (on the ZED-F9R HPS module)
-          Removed the hard-coded key values. The code now uses the key definitions from u-blox_config_keys.h
-  V1.2 :  Add delay to allow GPS to intialize on v10 hardware
-          Unhid the debug menu
-  V1.1 :  Upgrades to match v14 of the OpenLog Artemis
-          Support for the V10 hardware
-  V1.0 :  Initial release based on v13 of the OpenLog Artemis
+  Version history: please see CHANGELOG.md for details
 
 */
 
@@ -364,6 +340,11 @@ void loop() {
     }
 
     goToSleep();
+
+    if (settings.printMajorDebugMessages == true)
+    {
+      Serial.println(F("I'm awake!"));
+    }
 
     //Update measurementStartTime so we know when to go back to sleep
     measurementStartTime = measurementStartTime + (settings.usLoggingDuration / 1000ULL) + (settings.usSleepDuration / 1000ULL);
