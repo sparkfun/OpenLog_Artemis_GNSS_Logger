@@ -28,10 +28,10 @@ void storeData(void)
   
       digitalWrite(PIN_STAT_LED, HIGH);
       if (settings.logData && settings.sensor_uBlox.log && online.microSD && online.dataLogging)
-        gnssDataFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
+        gnssDataFile.write(myBuffer, bytesToWrite); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
       digitalWrite(PIN_STAT_LED, LOW);
 
-      fileBytesAvailable -= packetLength; // Subtract the number of bytes written
+      fileBytesAvailable -= bytesToWrite; // Subtract the number of bytes written
       if (fileBytesAvailable < packetLength) // Check if we should update fileBytesAvailable
         fileBytesAvailable = gpsSensor_ublox.fileBufferAvailable();
     }
