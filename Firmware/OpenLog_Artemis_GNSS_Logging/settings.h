@@ -45,16 +45,10 @@ struct struct_uBlox {
   uint8_t logUBXHNRATT = 0;
   uint8_t logUBXHNRINS = 0;
   uint8_t logNMEADTM = 0;
-  uint8_t logNMEAGAQ = 0;
-  uint8_t logNMEAGBQ = 0;
   uint8_t logNMEAGBS = 0;
   uint8_t logNMEAGGA = 0;
   uint8_t logNMEAGLL = 0;
-  uint8_t logNMEAGLQ = 0;
-  uint8_t logNMEAGNQ = 0;
   uint8_t logNMEAGNS = 0;
-  uint8_t logNMEAGPQ = 0;
-  uint8_t logNMEAGQQ = 0;
   uint8_t logNMEAGRS = 0;
   uint8_t logNMEAGSA = 0;
   uint8_t logNMEAGST = 0;

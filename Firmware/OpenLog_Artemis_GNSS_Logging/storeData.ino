@@ -1,24 +1,39 @@
-#define packetLength 512
+#define packetLength 512 // SdFat writes data in blocks of 512 bytes
 
 void storeData(void)
 {
   if (qwiicOnline.uBlox && qwiicAvailable.uBlox)
   {
-    gpsSensor_ublox.checkUblox(); // Check for the arrival of new data and process it.
-    gpsSensor_ublox.checkCallbacks(); // Check if any callbacks are waiting to be processed.
-  
-    while (gpsSensor_ublox.fileBufferAvailable() >= packetLength) // Check to see if we have enough data ready to store
+    uint16_t fileBytesAvailable = gpsSensor_ublox.fileBufferAvailable();
+    
+    if (fileBytesAvailable < (FILE_BUFFER_SIZE / 2)) // Check for the arrival of new data and process it but only if the buffer is less than half full
     {
       gpsSensor_ublox.checkUblox(); // Check for the arrival of new data and process it.
+      gpsSensor_ublox.checkCallbacks(); // Check if any callbacks are waiting to be processed.
+    }
+
+    while (fileBytesAvailable >= packetLength) // Check to see if we have enough data ready to store
+    {
+      if (fileBytesAvailable < (FILE_BUFFER_SIZE / 2))
+        gpsSensor_ublox.checkUblox(); // Check for the arrival of new data and process it while writing but only if the buffer is less than half full
   
-      uint8_t myBuffer[packetLength]; // Create our own buffer to hold the data while we write it to SD card
+      static uint8_t myBuffer[packetLength * 10]; // Create our own buffer to hold the data while we write it to SD card
+
+      uint16_t bytesToWrite = fileBytesAvailable / packetLength; // Calculate bytesToWrite as a multiple of packetLength
+      if (bytesToWrite > 10)
+        bytesToWrite = 10;
+      bytesToWrite *= packetLength;
   
-      gpsSensor_ublox.extractFileBufferData((uint8_t *)&myBuffer, packetLength); // Extract exactly packetLength bytes from the UBX file buffer and put them into myBuffer
+      gpsSensor_ublox.extractFileBufferData((uint8_t *)&myBuffer, bytesToWrite); // Extract exactly bytesToWrite bytes from the UBX file buffer and put them into myBuffer
   
       digitalWrite(PIN_STAT_LED, HIGH);
       if (settings.logData && settings.sensor_uBlox.log && online.microSD && online.dataLogging)
         gnssDataFile.write(myBuffer, packetLength); // Write exactly packetLength bytes from myBuffer to the ubxDataFile on the SD card
       digitalWrite(PIN_STAT_LED, LOW);
+
+      fileBytesAvailable -= packetLength; // Subtract the number of bytes written
+      if (fileBytesAvailable < packetLength) // Check if we should update fileBytesAvailable
+        fileBytesAvailable = gpsSensor_ublox.fileBufferAvailable();
     }
   
     static uint16_t oldMaxBufferBytes = 0;

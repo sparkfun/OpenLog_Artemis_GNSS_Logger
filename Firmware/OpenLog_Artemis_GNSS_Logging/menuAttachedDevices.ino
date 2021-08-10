@@ -270,64 +270,46 @@ void menuConfigure_uBloxNMEA()
     Serial.print(F(" 1) Log rate for NMEA DTM (Datum Reference)                                : "));
     Serial.println(settings.sensor_uBlox.logNMEADTM);
 
-    Serial.print(F(" 2) Log rate for NMEA GAQ                                                  : "));
-    Serial.println(settings.sensor_uBlox.logNMEAGAQ);
-
-    Serial.print(F(" 3) Log rate for NMEA GBQ                                                  : "));
-    Serial.println(settings.sensor_uBlox.logNMEAGBQ);
-
-    Serial.print(F(" 4) Log rate for NMEA GBS (Satellite Fault Detection)                      : "));
+    Serial.print(F(" 2) Log rate for NMEA GBS (Satellite Fault Detection)                      : "));
     Serial.println(settings.sensor_uBlox.logNMEAGBS);
 
-    Serial.print(F(" 5) Log rate for NMEA GGA (Global Positioning System Fix)                  : "));
+    Serial.print(F(" 3) Log rate for NMEA GGA (Global Positioning System Fix)                  : "));
     Serial.println(settings.sensor_uBlox.logNMEAGGA);
 
-    Serial.print(F(" 6) Log rate for NMEA GLL (Latitude and Longitude Position Fix and Status) : "));
+    Serial.print(F(" 4) Log rate for NMEA GLL (Latitude and Longitude Position Fix and Status) : "));
     Serial.println(settings.sensor_uBlox.logNMEAGLL);
 
-    Serial.print(F(" 7) Log rate for NMEA GLQ                                                  : "));
-    Serial.println(settings.sensor_uBlox.logNMEAGLQ);
-
-    Serial.print(F(" 8) Log rate for NMEA GNQ                                                  : "));
-    Serial.println(settings.sensor_uBlox.logNMEAGNQ);
-
-    Serial.print(F(" 9) Log rate for NMEA GNS (GNSS Fix Data)                                  : "));
+    Serial.print(F(" 5) Log rate for NMEA GNS (GNSS Fix Data)                                  : "));
     Serial.println(settings.sensor_uBlox.logNMEAGNS);
 
-    Serial.print(F("10) Log rate for NMEA GPQ                                                  : "));
-    Serial.println(settings.sensor_uBlox.logNMEAGPQ);
-
-    Serial.print(F("11) Log rate for NMEA GQQ                                                  : "));
-    Serial.println(settings.sensor_uBlox.logNMEAGQQ);
-
-    Serial.print(F("12) Log rate for NMEA GRS (GNSS Range Residuals)                           : "));
+    Serial.print(F(" 6) Log rate for NMEA GRS (GNSS Range Residuals)                           : "));
     Serial.println(settings.sensor_uBlox.logNMEAGRS);
 
-    Serial.print(F("13) Log rate for NMEA GSA (DOP and Active Satellites)                      : "));
+    Serial.print(F(" 7) Log rate for NMEA GSA (DOP and Active Satellites)                      : "));
     Serial.println(settings.sensor_uBlox.logNMEAGSA);
 
-    Serial.print(F("14) Log rate for NMEA GST (GNSS Pseudorange Error Statistics)              : "));
+    Serial.print(F(" 8) Log rate for NMEA GST (GNSS Pseudorange Error Statistics)              : "));
     Serial.println(settings.sensor_uBlox.logNMEAGST);
 
-    Serial.print(F("15) Log rate for NMEA GSV (GNSS Satellites In View)                        : "));
+    Serial.print(F(" 9) Log rate for NMEA GSV (GNSS Satellites In View)                        : "));
     Serial.println(settings.sensor_uBlox.logNMEAGSV);
 
-    Serial.print(F("16) Log rate for NMEA RLM                                                  : "));
+    Serial.print(F("10) Log rate for NMEA RLM                                                  : "));
     Serial.println(settings.sensor_uBlox.logNMEARLM);
 
-    Serial.print(F("17) Log rate for NMEA RMC (Recommended Minimum Data)                       : "));
+    Serial.print(F("11) Log rate for NMEA RMC (Recommended Minimum Data)                       : "));
     Serial.println(settings.sensor_uBlox.logNMEARMC);
 
-    Serial.print(F("18) Log rate for NMEA TXT (Text Transmission)                              : "));
+    Serial.print(F("12) Log rate for NMEA TXT (Text Transmission)                              : "));
     Serial.println(settings.sensor_uBlox.logNMEATXT);
 
-    Serial.print(F("19) Log rate for NMEA VLW (Dual Ground / Water Distance)                   : "));
+    Serial.print(F("13) Log rate for NMEA VLW (Dual Ground / Water Distance)                   : "));
     Serial.println(settings.sensor_uBlox.logNMEAVLW);
 
-    Serial.print(F("20) Log rate for NMEA VTG (Course Over Ground and Ground Speed)            : "));
+    Serial.print(F("14) Log rate for NMEA VTG (Course Over Ground and Ground Speed)            : "));
     Serial.println(settings.sensor_uBlox.logNMEAVTG);
 
-    Serial.print(F("21) Log rate for NMEA ZDA (Time and Date)                                  : "));
+    Serial.print(F("15) Log rate for NMEA ZDA (Time and Date)                                  : "));
     Serial.println(settings.sensor_uBlox.logNMEAZDA);
 
     Serial.flush();
@@ -339,44 +321,32 @@ void menuConfigure_uBloxNMEA()
     if (incoming == 1)
       setLogRate(&settings.sensor_uBlox.logNMEADTM);
     else if (incoming == 2)
-      setLogRate(&settings.sensor_uBlox.logNMEAGAQ);
-    else if (incoming == 3)
-      setLogRate(&settings.sensor_uBlox.logNMEAGBQ);
-    else if (incoming == 4)
       setLogRate(&settings.sensor_uBlox.logNMEAGBS);
-    else if (incoming == 5)
+    else if (incoming == 3)
       setLogRate(&settings.sensor_uBlox.logNMEAGGA);
-    else if (incoming == 6)
+    else if (incoming == 4)
       setLogRate(&settings.sensor_uBlox.logNMEAGLL);
-    else if (incoming == 7)
-      setLogRate(&settings.sensor_uBlox.logNMEAGLQ);
-    else if (incoming == 8)
-      setLogRate(&settings.sensor_uBlox.logNMEAGNQ);
-    else if (incoming == 9)
+    else if (incoming == 5)
       setLogRate(&settings.sensor_uBlox.logNMEAGNS);
-    else if (incoming == 10)
-      setLogRate(&settings.sensor_uBlox.logNMEAGPQ);
-    else if (incoming == 11)
-      setLogRate(&settings.sensor_uBlox.logNMEAGQQ);
-    else if (incoming == 12)
+    else if (incoming == 6)
       setLogRate(&settings.sensor_uBlox.logNMEAGRS);
-    else if (incoming == 13)
+    else if (incoming == 7)
       setLogRate(&settings.sensor_uBlox.logNMEAGSA);
-    else if (incoming == 14)
+    else if (incoming == 8)
       setLogRate(&settings.sensor_uBlox.logNMEAGST);
-    else if (incoming == 15)
+    else if (incoming == 9)
       setLogRate(&settings.sensor_uBlox.logNMEAGSV);
-    else if (incoming == 16)
+    else if (incoming == 10)
       setLogRate(&settings.sensor_uBlox.logNMEARLM);
-    else if (incoming == 17)
+    else if (incoming == 11)
       setLogRate(&settings.sensor_uBlox.logNMEARMC);
-    else if (incoming == 18)
+    else if (incoming == 12)
       setLogRate(&settings.sensor_uBlox.logNMEATXT);
-    else if (incoming == 19)
+    else if (incoming == 13)
       setLogRate(&settings.sensor_uBlox.logNMEAVLW);
-    else if (incoming == 20)
+    else if (incoming == 14)
       setLogRate(&settings.sensor_uBlox.logNMEAVTG);
-    else if (incoming == 21)
+    else if (incoming == 15)
       setLogRate(&settings.sensor_uBlox.logNMEAZDA);
     else if (incoming == STATUS_PRESSED_X)
       break;

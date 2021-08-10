@@ -92,10 +92,11 @@ bool beginSensors()
       //  | settings.sensor_uBlox.logUBXESFINS | settings.sensor_uBlox.logUBXHNRPVT | settings.sensor_uBlox.logUBXHNRATT | settings.sensor_uBlox.logUBXHNRINS;
 
       //Check if any NMEA messaged are enabled
-      bool nmeaRequired = settings.sensor_uBlox.logNMEADTM | settings.sensor_uBlox.logNMEAGAQ | settings.sensor_uBlox.logNMEAGBQ | settings.sensor_uBlox.logNMEAGBS
-        | settings.sensor_uBlox.logNMEAGGA | settings.sensor_uBlox.logNMEAGLL | settings.sensor_uBlox.logNMEAGLQ | settings.sensor_uBlox.logNMEAGNQ | settings.sensor_uBlox.logNMEAGNS
-        | settings.sensor_uBlox.logNMEAGPQ | settings.sensor_uBlox.logNMEAGQQ | settings.sensor_uBlox.logNMEAGRS | settings.sensor_uBlox.logNMEAGSA | settings.sensor_uBlox.logNMEAGST
-        | settings.sensor_uBlox.logNMEAGSV | settings.sensor_uBlox.logNMEARLM | settings.sensor_uBlox.logNMEARMC | settings.sensor_uBlox.logNMEATXT | settings.sensor_uBlox.logNMEAVLW
+      bool nmeaRequired = settings.sensor_uBlox.logNMEADTM | settings.sensor_uBlox.logNMEAGBS
+        | settings.sensor_uBlox.logNMEAGGA | settings.sensor_uBlox.logNMEAGLL | settings.sensor_uBlox.logNMEAGNS
+        | settings.sensor_uBlox.logNMEAGRS | settings.sensor_uBlox.logNMEAGSA | settings.sensor_uBlox.logNMEAGST
+        | settings.sensor_uBlox.logNMEAGSV | settings.sensor_uBlox.logNMEARLM | settings.sensor_uBlox.logNMEARMC
+        | settings.sensor_uBlox.logNMEATXT | settings.sensor_uBlox.logNMEAVLW
         | settings.sensor_uBlox.logNMEAVTG | settings.sensor_uBlox.logNMEAZDA;
 
       //Set the I2C port to output the required protocols
@@ -411,16 +412,10 @@ void disableMessages(uint16_t maxWait)
   gpsSensor_ublox.logHNRINS(false);
 
   gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_DTM, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GAQ, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBQ, COM_PORT_I2C, maxWait);
   gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBS, COM_PORT_I2C, maxWait);
   gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, maxWait);
   gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLQ, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNQ, COM_PORT_I2C, maxWait);
   gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNS, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GPQ, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GQQ, COM_PORT_I2C, maxWait);
   gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GRS, COM_PORT_I2C, maxWait);
   gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C, maxWait);
   gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C, maxWait);
@@ -541,26 +536,6 @@ void enableMessages(uint16_t maxWait)
     gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_DTM, COM_PORT_I2C, maxWait);
   }
 
-  if (settings.sensor_uBlox.logNMEAGAQ > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GAQ;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GAQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGAQ, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GAQ, COM_PORT_I2C, maxWait);
-  }
-
-  if (settings.sensor_uBlox.logNMEAGBQ > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBQ;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GBQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGBQ, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBQ, COM_PORT_I2C, maxWait);
-  }
-
   if (settings.sensor_uBlox.logNMEAGBS > 0)
   {
     nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBS;
@@ -591,26 +566,6 @@ void enableMessages(uint16_t maxWait)
     gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C, maxWait);
   }
 
-  if (settings.sensor_uBlox.logNMEAGLQ > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GLQ;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GLQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGLQ, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLQ, COM_PORT_I2C, maxWait);
-  }
-
-  if (settings.sensor_uBlox.logNMEAGNQ > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBQ;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GNQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGNQ, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNQ, COM_PORT_I2C, maxWait);
-  }
-
   if (settings.sensor_uBlox.logNMEAGNS > 0)
   {
     nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GNS;
@@ -619,26 +574,6 @@ void enableMessages(uint16_t maxWait)
   else
   {
     gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNS, COM_PORT_I2C, maxWait);
-  }
-
-  if (settings.sensor_uBlox.logNMEAGPQ > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GPQ;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GPQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGPQ, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GPQ, COM_PORT_I2C, maxWait);
-  }
-
-  if (settings.sensor_uBlox.logNMEAGQQ > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GQQ;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GQQ, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGQQ, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GQQ, COM_PORT_I2C, maxWait);
   }
 
   if (settings.sensor_uBlox.logNMEAGRS > 0)
