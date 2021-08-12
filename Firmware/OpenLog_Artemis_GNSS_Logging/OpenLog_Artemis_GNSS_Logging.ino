@@ -129,7 +129,6 @@ enum returnStatus {
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>
 TwoWire qwiic(PIN_QWIIC_SDA,PIN_QWIIC_SCL); //Will use pads 8/9
-#define QWIIC_PULLUPS 0 // Default to no pull-ups on the Qwiic bus to minimise u-blox bus errors
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //EEPROM for storing settings
@@ -358,31 +357,31 @@ void beginQwiic()
   pinMode(PIN_QWIIC_POWER, OUTPUT);
   qwiicPowerOn();
   qwiic.begin();
-  setQwiicPullups(QWIIC_PULLUPS); //Just to make it really clear what pull-ups are being used, set pullups here.
+  setQwiicPullups(); //Just to make it really clear what pull-ups are being used, set pullups here.
 }
 
-void setQwiicPullups(uint32_t qwiicBusPullUps)
+void setQwiicPullups()
 {
   //Change SCL and SDA pull-ups manually using pin_config
   am_hal_gpio_pincfg_t sclPinCfg = g_AM_BSP_GPIO_IOM1_SCL;
   am_hal_gpio_pincfg_t sdaPinCfg = g_AM_BSP_GPIO_IOM1_SDA;
 
-  if (qwiicBusPullUps == 0)
+  if (settings.qwiicBusPullUps == 0)
   {
     sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE; // No pull-ups
     sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
   }
-  else if (qwiicBusPullUps == 1)
+  else if (settings.qwiicBusPullUps == 1)
   {
     sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K; // Use 1K5 pull-ups
     sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
   }
-  else if (qwiicBusPullUps == 6)
+  else if (settings.qwiicBusPullUps == 6)
   {
     sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K; // Use 6K pull-ups
     sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K;
   }
-  else if (qwiicBusPullUps == 12)
+  else if (settings.qwiicBusPullUps == 12)
   {
     sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K; // Use 12K pull-ups
     sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K;

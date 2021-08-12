@@ -12,7 +12,9 @@ bool beginSensors()
     return (false);
   }
 
+  setQwiicPullups(); //Just in case the pull-ups have been changed, set pullups here too
   determineMaxI2CSpeed(); //Try for 400kHz but reduce if the user has selected a slower speed
+
   if (qwiicAvailable.uBlox && settings.sensor_uBlox.log && ((!qwiicOnline.uBlox) || (gnssSettingsChanged == true))) // Only do this if the sensor is not online
   {
     gnssSettingsChanged = false;
