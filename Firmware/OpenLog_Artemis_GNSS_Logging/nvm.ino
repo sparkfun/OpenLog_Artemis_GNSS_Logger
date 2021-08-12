@@ -172,6 +172,53 @@ void recordSettingsToFile()
     settingsFile.print("hnrNavigationRate="); settingsFile.println(settings.hnrNavigationRate);
     settingsFile.print("printGNSSDebugMessages="); settingsFile.println(settings.printGNSSDebugMessages);
 
+    settingsFile.print("GNSS:log="); settingsFile.println(settings.sensor_uBlox.log);
+    settingsFile.print("GNSS:powerManagement="); settingsFile.println(settings.sensor_uBlox.powerManagement);
+    settingsFile.print("GNSS:enableGPS="); settingsFile.println(settings.sensor_uBlox.enableGPS);
+    settingsFile.print("GNSS:enableGLO="); settingsFile.println(settings.sensor_uBlox.enableGLO);
+    settingsFile.print("GNSS:enableGAL="); settingsFile.println(settings.sensor_uBlox.enableGAL);
+    settingsFile.print("GNSS:enableBDS="); settingsFile.println(settings.sensor_uBlox.enableBDS);
+    settingsFile.print("GNSS:enableQZSS="); settingsFile.println(settings.sensor_uBlox.enableQZSS);
+    settingsFile.print("GNSS:logUBXNAVPOSECEF="); settingsFile.println(settings.sensor_uBlox.logUBXNAVPOSECEF);
+    settingsFile.print("GNSS:logUBXNAVSTATUS="); settingsFile.println(settings.sensor_uBlox.logUBXNAVSTATUS);
+    settingsFile.print("GNSS:logUBXNAVDOP="); settingsFile.println(settings.sensor_uBlox.logUBXNAVDOP);
+    settingsFile.print("GNSS:logUBXNAVATT="); settingsFile.println(settings.sensor_uBlox.logUBXNAVATT);
+    settingsFile.print("GNSS:logUBXNAVPVT="); settingsFile.println(settings.sensor_uBlox.logUBXNAVPVT);
+    settingsFile.print("GNSS:logUBXNAVODO="); settingsFile.println(settings.sensor_uBlox.logUBXNAVODO);
+    settingsFile.print("GNSS:logUBXNAVVELECEF="); settingsFile.println(settings.sensor_uBlox.logUBXNAVVELECEF);
+    settingsFile.print("GNSS:logUBXNAVVELNED="); settingsFile.println(settings.sensor_uBlox.logUBXNAVVELNED);
+    settingsFile.print("GNSS:logUBXNAVHPPOSECEF="); settingsFile.println(settings.sensor_uBlox.logUBXNAVHPPOSECEF);
+    settingsFile.print("GNSS:logUBXNAVHPPOSLLH="); settingsFile.println(settings.sensor_uBlox.logUBXNAVHPPOSLLH);
+    settingsFile.print("GNSS:logUBXNAVCLOCK="); settingsFile.println(settings.sensor_uBlox.logUBXNAVCLOCK);
+    settingsFile.print("GNSS:logUBXNAVRELPOSNED="); settingsFile.println(settings.sensor_uBlox.logUBXNAVRELPOSNED);
+    settingsFile.print("GNSS:logUBXRXMSFRBX="); settingsFile.println(settings.sensor_uBlox.logUBXRXMSFRBX);
+    settingsFile.print("GNSS:logUBXRXMRAWX="); settingsFile.println(settings.sensor_uBlox.logUBXRXMRAWX);
+    settingsFile.print("GNSS:logUBXTIMTM2="); settingsFile.println(settings.sensor_uBlox.logUBXTIMTM2);
+    settingsFile.print("GNSS:logUBXESFMEAS="); settingsFile.println(settings.sensor_uBlox.logUBXESFMEAS);
+    settingsFile.print("GNSS:logUBXESFRAW="); settingsFile.println(settings.sensor_uBlox.logUBXESFRAW);
+    settingsFile.print("GNSS:logUBXESFSTATUS="); settingsFile.println(settings.sensor_uBlox.logUBXESFSTATUS);
+    settingsFile.print("GNSS:logUBXESFALG="); settingsFile.println(settings.sensor_uBlox.logUBXESFALG);
+    settingsFile.print("GNSS:logUBXESFINS="); settingsFile.println(settings.sensor_uBlox.logUBXESFINS);
+    settingsFile.print("GNSS:logUBXHNRPVT="); settingsFile.println(settings.sensor_uBlox.logUBXHNRPVT);
+    settingsFile.print("GNSS:logUBXHNRATT="); settingsFile.println(settings.sensor_uBlox.logUBXHNRATT);
+    settingsFile.print("GNSS:logUBXHNRINS="); settingsFile.println(settings.sensor_uBlox.logUBXHNRINS);
+    settingsFile.print("GNSS:logNMEADTM="); settingsFile.println(settings.sensor_uBlox.logNMEADTM);
+    settingsFile.print("GNSS:logNMEAGBS="); settingsFile.println(settings.sensor_uBlox.logNMEAGBS);
+    settingsFile.print("GNSS:logNMEAGGA="); settingsFile.println(settings.sensor_uBlox.logNMEAGGA);
+    settingsFile.print("GNSS:logNMEAGLL="); settingsFile.println(settings.sensor_uBlox.logNMEAGLL);
+    settingsFile.print("GNSS:logNMEAGNS="); settingsFile.println(settings.sensor_uBlox.logNMEAGNS);
+    settingsFile.print("GNSS:logNMEAGRS="); settingsFile.println(settings.sensor_uBlox.logNMEAGRS);
+    settingsFile.print("GNSS:logNMEAGSA="); settingsFile.println(settings.sensor_uBlox.logNMEAGSA);
+    settingsFile.print("GNSS:logNMEAGST="); settingsFile.println(settings.sensor_uBlox.logNMEAGST);
+    settingsFile.print("GNSS:logNMEAGSV="); settingsFile.println(settings.sensor_uBlox.logNMEAGSV);
+    settingsFile.print("GNSS:logNMEARLM="); settingsFile.println(settings.sensor_uBlox.logNMEARLM);
+    settingsFile.print("GNSS:logNMEARMC="); settingsFile.println(settings.sensor_uBlox.logNMEARMC);
+    settingsFile.print("GNSS:logNMEATXT="); settingsFile.println(settings.sensor_uBlox.logNMEATXT);
+    settingsFile.print("GNSS:logNMEAVLW="); settingsFile.println(settings.sensor_uBlox.logNMEAVLW);
+    settingsFile.print("GNSS:logNMEAVTG="); settingsFile.println(settings.sensor_uBlox.logNMEAVTG);
+    settingsFile.print("GNSS:logNMEAZDA="); settingsFile.println(settings.sensor_uBlox.logNMEAZDA);
+    settingsFile.print("GNSS:ubloxI2Caddress="); settingsFile.println(settings.sensor_uBlox.ubloxI2Caddress);
+
     updateDataFileAccess(&settingsFile); // Update the file access time & date
     settingsFile.close();
   }
@@ -349,6 +396,100 @@ bool parseLine(char* str) {
     settings.hnrNavigationRate = d;
   else if (strcmp(settingName, "printGNSSDebugMessages") == 0)
     settings.printGNSSDebugMessages = d;
+    
+  else if (strcmp(settingName, "GNSS:log") == 0)
+    settings.sensor_uBlox.log = d;
+  else if (strcmp(settingName, "GNSS:powerManagement") == 0)
+    settings.sensor_uBlox.powerManagement = d;
+  else if (strcmp(settingName, "GNSS:enableGPS") == 0)
+    settings.sensor_uBlox.enableGPS = d;
+  else if (strcmp(settingName, "GNSS:enableGLO") == 0)
+    settings.sensor_uBlox.enableGLO = d;
+  else if (strcmp(settingName, "GNSS:enableGAL") == 0)
+    settings.sensor_uBlox.enableGAL = d;
+  else if (strcmp(settingName, "GNSS:enableBDS") == 0)
+    settings.sensor_uBlox.enableBDS = d;
+  else if (strcmp(settingName, "GNSS:enableQZSS") == 0)
+    settings.sensor_uBlox.enableQZSS = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVPOSECEF") == 0)
+    settings.sensor_uBlox.logUBXNAVPOSECEF = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVSTATUS") == 0)
+    settings.sensor_uBlox.logUBXNAVSTATUS = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVDOP") == 0)
+    settings.sensor_uBlox.logUBXNAVDOP = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVATT") == 0)
+    settings.sensor_uBlox.logUBXNAVATT = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVPVT") == 0)
+    settings.sensor_uBlox.logUBXNAVPVT = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVODO") == 0)
+    settings.sensor_uBlox.logUBXNAVODO = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVVELECEF") == 0)
+    settings.sensor_uBlox.logUBXNAVVELECEF = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVVELNED") == 0)
+    settings.sensor_uBlox.logUBXNAVVELNED = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVHPPOSECEF") == 0)
+    settings.sensor_uBlox.logUBXNAVHPPOSECEF = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVHPPOSLLH") == 0)
+    settings.sensor_uBlox.logUBXNAVHPPOSLLH = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVCLOCK") == 0)
+    settings.sensor_uBlox.logUBXNAVCLOCK = d;
+  else if (strcmp(settingName, "GNSS:logUBXNAVRELPOSNED") == 0)
+    settings.sensor_uBlox.logUBXNAVRELPOSNED = d;
+  else if (strcmp(settingName, "GNSS:logUBXRXMSFRBX") == 0)
+    settings.sensor_uBlox.logUBXRXMSFRBX = d;
+  else if (strcmp(settingName, "GNSS:logUBXRXMRAWX") == 0)
+    settings.sensor_uBlox.logUBXRXMRAWX = d;
+  else if (strcmp(settingName, "GNSS:logUBXTIMTM2") == 0)
+    settings.sensor_uBlox.logUBXTIMTM2 = d;
+  else if (strcmp(settingName, "GNSS:logUBXESFMEAS") == 0)
+    settings.sensor_uBlox.logUBXESFMEAS = d;
+  else if (strcmp(settingName, "GNSS:logUBXESFRAW") == 0)
+    settings.sensor_uBlox.logUBXESFRAW = d;
+  else if (strcmp(settingName, "GNSS:logUBXESFSTATUS") == 0)
+    settings.sensor_uBlox.logUBXESFSTATUS = d;
+  else if (strcmp(settingName, "GNSS:logUBXESFALG") == 0)
+    settings.sensor_uBlox.logUBXESFALG = d;
+  else if (strcmp(settingName, "GNSS:logUBXESFINS") == 0)
+    settings.sensor_uBlox.logUBXESFINS = d;
+  else if (strcmp(settingName, "GNSS:logUBXHNRPVT") == 0)
+    settings.sensor_uBlox.logUBXHNRPVT = d;
+  else if (strcmp(settingName, "GNSS:logUBXHNRATT") == 0)
+    settings.sensor_uBlox.logUBXHNRATT = d;
+  else if (strcmp(settingName, "GNSS:logUBXHNRINS") == 0)
+    settings.sensor_uBlox.logUBXHNRINS = d;
+  else if (strcmp(settingName, "GNSS:logNMEADTM") == 0)
+    settings.sensor_uBlox.logNMEADTM = d;
+  else if (strcmp(settingName, "GNSS:logNMEAGBS") == 0)
+    settings.sensor_uBlox.logNMEAGBS = d;
+  else if (strcmp(settingName, "GNSS:logNMEAGGA") == 0)
+    settings.sensor_uBlox.logNMEAGGA = d;
+  else if (strcmp(settingName, "GNSS:logNMEAGLL") == 0)
+    settings.sensor_uBlox.logNMEAGLL = d;
+  else if (strcmp(settingName, "GNSS:logNMEAGNS") == 0)
+    settings.sensor_uBlox.logNMEAGNS = d;
+  else if (strcmp(settingName, "GNSS:logNMEAGRS") == 0)
+    settings.sensor_uBlox.logNMEAGRS = d;
+  else if (strcmp(settingName, "GNSS:logNMEAGSA") == 0)
+    settings.sensor_uBlox.logNMEAGSA = d;
+  else if (strcmp(settingName, "GNSS:logNMEAGST") == 0)
+    settings.sensor_uBlox.logNMEAGST = d;
+  else if (strcmp(settingName, "GNSS:logNMEAGSV") == 0)
+    settings.sensor_uBlox.logNMEAGSV = d;
+  else if (strcmp(settingName, "GNSS:logNMEARLM") == 0)
+    settings.sensor_uBlox.logNMEARLM = d;
+  else if (strcmp(settingName, "GNSS:logNMEARMC") == 0)
+    settings.sensor_uBlox.logNMEARMC = d;
+  else if (strcmp(settingName, "GNSS:logNMEATXT") == 0)
+    settings.sensor_uBlox.logNMEATXT = d;
+  else if (strcmp(settingName, "GNSS:logNMEAVLW") == 0)
+    settings.sensor_uBlox.logNMEAVLW = d;
+  else if (strcmp(settingName, "GNSS:logNMEAVTG") == 0)
+    settings.sensor_uBlox.logNMEAVTG = d;
+  else if (strcmp(settingName, "GNSS:logNMEAZDA") == 0)
+    settings.sensor_uBlox.logNMEAZDA = d;
+  else if (strcmp(settingName, "GNSS:ubloxI2Caddress") == 0)
+    settings.sensor_uBlox.ubloxI2Caddress = d;
+
   else
   {
     Serial.print("Unknown setting: ");
