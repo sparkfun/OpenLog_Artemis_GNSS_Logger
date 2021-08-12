@@ -1,8 +1,8 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: July 17th, 2021
-  Version: V2.0
+  Date: August 12th, 2021
+  Version: V2.1
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX and NMEA
   messages from the u-blox series 8, 9 and 10 GNSS receivers.
@@ -73,7 +73,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 0;
+const int FIRMWARE_VERSION_MINOR = 1;
 
 //Define the OLA board identifier:
 //  This is an int which is unique to this variant of the OLA and which allows us
@@ -83,7 +83,7 @@ const int FIRMWARE_VERSION_MINOR = 0;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x220 // This will appear as 544 (decimal) in OLA_GNSS_settings.cfg
+#define OLA_IDENTIFIER 0x221 // This will appear as 545 (decimal) in OLA_GNSS_settings.cfg
 
 #include "settings.h"
 
@@ -129,7 +129,6 @@ enum returnStatus {
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <Wire.h>
 TwoWire qwiic(PIN_QWIIC_SDA,PIN_QWIIC_SCL); //Will use pads 8/9
-#define QWIIC_PULLUPS 0 // Default to no pull-ups on the Qwiic bus to minimise u-blox bus errors
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 //EEPROM for storing settings
@@ -358,31 +357,31 @@ void beginQwiic()
   pinMode(PIN_QWIIC_POWER, OUTPUT);
   qwiicPowerOn();
   qwiic.begin();
-  setQwiicPullups(QWIIC_PULLUPS); //Just to make it really clear what pull-ups are being used, set pullups here.
+  setQwiicPullups(); //Just to make it really clear what pull-ups are being used, set pullups here.
 }
 
-void setQwiicPullups(uint32_t qwiicBusPullUps)
+void setQwiicPullups()
 {
   //Change SCL and SDA pull-ups manually using pin_config
   am_hal_gpio_pincfg_t sclPinCfg = g_AM_BSP_GPIO_IOM1_SCL;
   am_hal_gpio_pincfg_t sdaPinCfg = g_AM_BSP_GPIO_IOM1_SDA;
 
-  if (qwiicBusPullUps == 0)
+  if (settings.qwiicBusPullUps == 0)
   {
     sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE; // No pull-ups
     sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
   }
-  else if (qwiicBusPullUps == 1)
+  else if (settings.qwiicBusPullUps == 1)
   {
     sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K; // Use 1K5 pull-ups
     sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_1_5K;
   }
-  else if (qwiicBusPullUps == 6)
+  else if (settings.qwiicBusPullUps == 6)
   {
     sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K; // Use 6K pull-ups
     sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_6K;
   }
-  else if (qwiicBusPullUps == 12)
+  else if (settings.qwiicBusPullUps == 12)
   {
     sclPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K; // Use 12K pull-ups
     sdaPinCfg.ePullup = AM_HAL_GPIO_PIN_PULLUP_12K;

@@ -53,7 +53,7 @@ void menuMain()
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
-      menuLogRate();
+      menuLogRate(&prevTerminalOutput);
     else if (incoming == '2')
       menuConfigure_uBlox();
     else if (incoming == '3')
@@ -134,7 +134,7 @@ void menuMain()
   recordSettings(); //Once all menus have exited, record the new settings to EEPROM and config file
 
   //Once all menus have exited, start any sensors that are available, logging, but not yet online/begun.
-  //This will re-enable the GNSS debug messages if desired
+  //This will re-enable the GNSS debug messages if desired, set the clock speed and update the pull-ups
   beginSensors();
 
   while (Serial.available()) Serial.read(); //Empty buffer of any newline chars
@@ -153,8 +153,24 @@ void menuConfigure_QwiicBus()
 
     Serial.print(F("1) Set Max Qwiic Bus Speed          : "));
     Serial.println(settings.qwiicBusMaxSpeed);
+    Serial.print(F("2) Qwiic (I2C) Pull-Up (kOhms)      : "));
+    switch (settings.qwiicBusPullUps)
+    {
+      case 0:
+      case 6:
+      case 12:
+      case 24:
+        Serial.println(settings.qwiicBusPullUps);
+        break;
+      case 1:
+        Serial.println(F("1.5"));
+        break;
+      default:
+        Serial.println(F("UNKNOWN"));
+        break;
+    }
 #if(HARDWARE_VERSION_MAJOR >= 1)
-    Serial.print(F("2) Turn off bus power when sleeping : "));
+    Serial.print(F("3) Turn off bus power when sleeping : "));
     if (settings.powerDownQwiicBusBetweenReads == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
 #endif
@@ -170,8 +186,30 @@ void menuConfigure_QwiicBus()
       else
         settings.qwiicBusMaxSpeed = 100000;
     }
-#if(HARDWARE_VERSION_MAJOR >= 1)
     else if (incoming == '2')
+    {
+      switch (settings.qwiicBusPullUps)
+      {
+        case 0:
+          settings.qwiicBusPullUps = 1;
+          break;
+        case 1:
+          settings.qwiicBusPullUps = 6;
+          break;
+        case 6:
+          settings.qwiicBusPullUps = 12;
+          break;
+        case 12:
+          settings.qwiicBusPullUps = 24;
+          break;
+        case 24:
+        default:
+          settings.qwiicBusPullUps = 0;
+          break;
+      }
+    }
+#if(HARDWARE_VERSION_MAJOR >= 1)
+    else if (incoming == '3')
       settings.powerDownQwiicBusBetweenReads ^= 1;
 #endif
     else if (incoming == 'x')

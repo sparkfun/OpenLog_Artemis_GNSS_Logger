@@ -88,6 +88,7 @@ struct struct_settings {
   float vinCorrectionFactor = 1.47; //Correction factor for the VIN measurement; to compensate for the divider impedance
   uint8_t hnrNavigationRate = 1; //HNR Navigation Rate (if supported)
   bool printGNSSDebugMessages = false;
+  uint8_t qwiicBusPullUps = 0; // Qwiic bus pull-up resistance: 0, 1(.5), 6, 12, 24 kOhms
   struct_uBlox sensor_uBlox;
 } settings;
 

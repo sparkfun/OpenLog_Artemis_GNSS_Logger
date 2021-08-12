@@ -113,7 +113,7 @@ void menuConfigure_uBloxUBX()
   while (1)
   {
     Serial.println();
-    Serial.print(F("Menu: Configure UBX logging"));
+    Serial.print(F("Menu: Configure UBX logging "));
 
     //Print the module information
     Serial.print(minfo.mod);
@@ -294,7 +294,7 @@ void menuConfigure_uBloxNMEA()
     Serial.print(F(" 9) Log rate for NMEA GSV (GNSS Satellites In View)                        : "));
     Serial.println(settings.sensor_uBlox.logNMEAGSV);
 
-    Serial.print(F("10) Log rate for NMEA RLM                                                  : "));
+    Serial.print(F("10) Log rate for NMEA RLM (Return Link Message)                            : "));
     Serial.println(settings.sensor_uBlox.logNMEARLM);
 
     Serial.print(F("11) Log rate for NMEA RMC (Recommended Minimum Data)                       : "));

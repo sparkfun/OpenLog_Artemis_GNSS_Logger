@@ -1,6 +1,10 @@
 Change Log
 ======================
 
+* V2.1 :
+  * settings.enableTerminalOutput is now updated and stored correctly after leaving the menus
+  * Add GNSS settings to settings file
+  * Add a menu option for the Qwiic pull-ups making it easier to experiment with 400kHz
 * V2.0 :
   * Update using v2.1.0 of the SparkFun Apollo3 (Artemis) core and v2.0.9 of the SparkFun u-blox GNSS library
   * Please note that v2.1.1 of Apollo3 contains a feature which makes communication with u-blox modules over I<sup>2</sup>C problematic. Please use v2.1.0 if you are compiling the code yourself.
