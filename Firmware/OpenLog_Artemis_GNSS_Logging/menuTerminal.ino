@@ -1,4 +1,4 @@
-void menuLogRate()
+void menuLogRate(bool *prevTerminalOutput)
 {
   while (1)
   {
@@ -10,7 +10,7 @@ void menuLogRate()
     else Serial.println(F("Disabled"));
 
     Serial.print(F("2) Log to Terminal                                        : "));
-    if (settings.enableTerminalOutput == true) Serial.println(F("Enabled"));
+    if (*prevTerminalOutput == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
     Serial.print(F("3) Set Serial Baud Rate                                   : "));
@@ -72,7 +72,7 @@ void menuLogRate()
     if (incoming == 1)
       settings.logData ^= 1;
     else if (incoming == 2)
-      settings.enableTerminalOutput ^= 1;
+      *prevTerminalOutput ^= 1;
     else if (incoming == 3)
     {
       Serial.print(F("Enter baud rate (1200 to 500000): "));

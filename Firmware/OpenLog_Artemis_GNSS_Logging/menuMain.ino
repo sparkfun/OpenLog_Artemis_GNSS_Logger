@@ -53,7 +53,7 @@ void menuMain()
     byte incoming = getByteChoice(menuTimeout); //Timeout after x seconds
 
     if (incoming == '1')
-      menuLogRate();
+      menuLogRate(&prevTerminalOutput);
     else if (incoming == '2')
       menuConfigure_uBlox();
     else if (incoming == '3')
