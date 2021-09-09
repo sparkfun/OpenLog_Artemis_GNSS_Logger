@@ -1,8 +1,8 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: August 12th, 2021
-  Version: V2.1
+  Date: September 9th, 2021
+  Version: V2.2
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX and NMEA
   messages from the u-blox series 8, 9 and 10 GNSS receivers.
@@ -73,7 +73,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 2;
-const int FIRMWARE_VERSION_MINOR = 1;
+const int FIRMWARE_VERSION_MINOR = 2;
 
 //Define the OLA board identifier:
 //  This is an int which is unique to this variant of the OLA and which allows us
@@ -83,7 +83,7 @@ const int FIRMWARE_VERSION_MINOR = 1;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x221 // This will appear as 545 (decimal) in OLA_GNSS_settings.cfg
+#define OLA_IDENTIFIER 0x222 // This will appear as 546 (decimal) in OLA_GNSS_settings.cfg
 
 #include "settings.h"
 
@@ -181,7 +181,7 @@ SFE_UBLOX_GNSS gpsSensor_ublox;
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 uint64_t measurementStartTime; //Used to calc the elapsed time
 unsigned long lastReadTime = 0; //Used to delay between u-blox reads
-unsigned long lastDataLogSyncTime = 0; //Used to sync SD every half second
+unsigned long lastDataLogSyncTime = 0; //Used to sync SD every second
 const byte menuTimeout = 15; //Menus will exit/timeout after this number of seconds
 bool rtcHasBeenSyncd = false; //Flag to indicate if the RTC been sync'd to GNSS
 bool rtcNeedsSync = true; //Flag to indicate if the RTC needs to be sync'd (after sleep)

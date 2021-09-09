@@ -49,6 +49,14 @@ void storeData(void)
         Serial.println(maxBufferBytes);
       }
     }
+
+    // Sync logged data and update the access timestamp
+    if ((settings.frequentFileAccessTimestamps) && (millis() > (lastDataLogSyncTime + 1000)))
+    {
+      gnssDataFile.sync();
+      updateDataFileAccess(&gnssDataFile); //Update the file access time stamp
+      lastDataLogSyncTime = millis();
+    }
   }
 }
 

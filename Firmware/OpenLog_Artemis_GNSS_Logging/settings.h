@@ -82,7 +82,7 @@ struct struct_settings {
   int  qwiicBusMaxSpeed = 100000; // 400kHz with no pullups causes problems, so default to 100kHz. User can select 400 later if required.
   bool enablePwrLedDuringSleep = true;
   bool useGPIO32ForStopLogging = false; //If true, use GPIO as a stop logging button
-  bool frequentFileAccessTimestamps = false; // If true, the log file access timestamps are updated every 500ms
+  bool frequentFileAccessTimestamps = true; // If true, the log file is sync'd and the access timestamp is updated every second
   bool enableLowBatteryDetection = false; // Low battery detection
   float lowBatteryThreshold = 3.4; // Low battery voltage threshold (Volts)
   float vinCorrectionFactor = 1.47; //Correction factor for the VIN measurement; to compensate for the divider impedance
