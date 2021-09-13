@@ -61,7 +61,7 @@ void menuLogRate(bool *prevTerminalOutput)
     if (settings.openNewLogFile == true) Serial.println(F("Yes"));
     else Serial.println(F("No"));
 
-    Serial.print(F("10) Frequent log file access timestamps: "));
+    Serial.print(F("10) Frequent log file sync and access timestamps          : "));
     if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
