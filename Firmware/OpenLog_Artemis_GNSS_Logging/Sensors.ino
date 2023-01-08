@@ -12,6 +12,8 @@ bool beginSensors()
     return (false);
   }
 
+  Serial.println(F("Detecting and configuring the GNSS. This will take a few seconds..."));
+
   setQwiicPullups(); //Just in case the pull-ups have been changed, set pullups here too
   determineMaxI2CSpeed(); //Try for 400kHz but reduce if the user has selected a slower speed
 
@@ -128,6 +130,12 @@ bool beginSensors()
 
       //Set the HNR rate
       gpsSensor_ublox.setHNRNavigationRate(settings.hnrNavigationRate);
+
+      //Configure UBX and NMEA output
+      if(settings.outputUBX)
+        gpsSensor_ublox.setUBXOutputPort(Serial1);
+      if(settings.outputNMEA)
+        gpsSensor_ublox.setNMEAOutputPort(Serial1);
 
       //Enable the selected messages
       enableMessages(1100);
@@ -320,376 +328,292 @@ void resetGNSS()
 
 void disableMessages(uint16_t maxWait)
 {
-  //gpsSensor_ublox.setAutoNAVPOSECEFcallback(&callbackNAVPOSECEF, maxWait);
-  gpsSensor_ublox.setAutoNAVPOSECEFrate(0, false, maxWait);
+  Serial.println(F("Disabling all GNSS messages. This will take a few seconds..."));
+
+  //Disable terminal output when configuring messages
+  bool prevTerminalOutput = settings.enableTerminalOutput;
+  settings.enableTerminalOutput = false;
+
+  //gpsSensor_ublox.setAutoNAVPOSECEFcallback(&callbackNAVPOSECEF, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoNAVPOSECEFrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVPOSECEF(false);
 
-  //gpsSensor_ublox.setAutoNAVSTATUScallback(&callbackNAVSTATUS, maxWait);
-  gpsSensor_ublox.setAutoNAVSTATUSrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoNAVSTATUScallback(&callbackNAVSTATUS, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoNAVSTATUSrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVSTATUS(false);
 
-  //gpsSensor_ublox.setAutoDOPcallback(&callbackNAVDOP, maxWait);
-  gpsSensor_ublox.setAutoDOPrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoDOPcallback(&callbackNAVDOP, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoDOPrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVDOP(false);
 
-  //gpsSensor_ublox.setAutoNAVATTcallback(&callbackNAVATT, maxWait);
-  gpsSensor_ublox.setAutoNAVATTrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoNAVATTcallback(&callbackNAVATT, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoNAVATTrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVATT(false);
 
-  //gpsSensor_ublox.setAutoPVTcallback(&callbackNAVPVT, maxWait);
-  gpsSensor_ublox.setAutoPVTrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoPVTcallback(&callbackNAVPVT, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoPVTrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVPVT(false);
 
-  //gpsSensor_ublox.setAutoNAVODOcallback(&callbackNAVODO, maxWait);
-  gpsSensor_ublox.setAutoNAVODOrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoNAVODOcallback(&callbackNAVODO, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoNAVODOrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVODO(false);
 
-  //gpsSensor_ublox.setAutoNAVVELECEFcallback(&callbackNAVVELECEF, maxWait);
-  gpsSensor_ublox.setAutoNAVVELECEFrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoNAVVELECEFcallback(&callbackNAVVELECEF, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoNAVVELECEFrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVVELECEF(false);
 
-  //gpsSensor_ublox.setAutoNAVVELNEDcallback(&callbackNAVVELNED, maxWait);
-  gpsSensor_ublox.setAutoNAVVELNEDrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoNAVVELNEDcallback(&callbackNAVVELNED, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoNAVVELNEDrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVVELNED(false);
 
-  //gpsSensor_ublox.setAutoNAVHPPOSECEFcallback(&callbackNAVHPPOSECEF, maxWait);
-  gpsSensor_ublox.setAutoNAVHPPOSECEFrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoNAVHPPOSECEFcallback(&callbackNAVHPPOSECEF, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoNAVHPPOSECEFrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVHPPOSECEF(false);
 
-  //gpsSensor_ublox.setAutoHPPOSLLHcallback(&callbackNAVHPPOSLLH, maxWait);
-  gpsSensor_ublox.setAutoHPPOSLLHrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoHPPOSLLHcallback(&callbackNAVHPPOSLLH, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoHPPOSLLHrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVHPPOSLLH(false);
 
-  //gpsSensor_ublox.setAutoNAVCLOCKcallback(&callbackNAVCLOCK, maxWait);
-  gpsSensor_ublox.setAutoNAVCLOCKrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoNAVCLOCKcallback(&callbackNAVCLOCK, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoNAVCLOCKrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVCLOCK(false);
 
-  //gpsSensor_ublox.setAutoRELPOSNEDcallback(&callbackNAVRELPOSNED, maxWait);
-  gpsSensor_ublox.setAutoRELPOSNEDrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoRELPOSNEDcallback(&callbackNAVRELPOSNED, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoRELPOSNEDrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVRELPOSNED(false);
 
-  //gpsSensor_ublox.setAutoRXMSFRBXcallback(&callbackRXMSFRBX, maxWait);
-  gpsSensor_ublox.setAutoRXMSFRBXrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoRXMSFRBXcallback(&callbackRXMSFRBX, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoRXMSFRBXrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logRXMSFRBX(false);
 
-  //gpsSensor_ublox.setAutoRXMRAWXcallback(&callbackRXMRAWX, maxWait);
-  gpsSensor_ublox.setAutoRXMRAWXrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoRXMRAWXcallback(&callbackRXMRAWX, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoRXMRAWXrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logRXMRAWX(false);
-  gpsSensor_ublox.disableUBX7Fcheck(false);
 
-  //gpsSensor_ublox.setAutoTIMTM2callback(&callbackTIMTM2, maxWait);
-  gpsSensor_ublox.setAutoTIMTM2rate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoTIMTM2callback(&callbackTIMTM2, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoTIMTM2rate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logTIMTM2(false);
 
-  //gpsSensor_ublox.setAutoESFALGcallback(&callbackESFALG, maxWait);
-  gpsSensor_ublox.setAutoESFALGrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoESFALGcallback(&callbackESFALG, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoESFALGrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFALG(false);
 
-  //gpsSensor_ublox.setAutoESFINScallback(&callbackESFINS, maxWait);
-  gpsSensor_ublox.setAutoESFINSrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoESFINScallback(&callbackESFINS, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoESFINSrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFINS(false);
 
-  //gpsSensor_ublox.setAutoESFMEAScallback(&callbackESFMEAS, maxWait);
-  gpsSensor_ublox.setAutoESFMEASrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoESFMEAScallback(&callbackESFMEAS, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoESFMEASrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFMEAS(false);
 
-  //gpsSensor_ublox.setAutoESFRAWcallback(&callbackESFRAW, maxWait);
-  gpsSensor_ublox.setAutoESFRAWrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoESFRAWcallback(&callbackESFRAW, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoESFRAWrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFRAW(false);
 
-  //gpsSensor_ublox.setAutoESFSTATUScallback(&callbackESFSTATUS, maxWait);
-  gpsSensor_ublox.setAutoESFSTATUSrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoESFSTATUScallback(&callbackESFSTATUS, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoESFSTATUSrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFSTATUS(false);
 
-  //gpsSensor_ublox.setAutoHNRPVTcallback(&callbackHNRPVT, maxWait);
-  gpsSensor_ublox.setAutoHNRPVTrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoHNRPVTcallback(&callbackHNRPVT, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoHNRPVTrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logHNRPVT(false);
 
-  //gpsSensor_ublox.setAutoHNRATTcallback(&callbackHNRATT, maxWait);
-  gpsSensor_ublox.setAutoHNRATTrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoHNRATTcallback(&callbackHNRATT, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoHNRATTrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logHNRATT(false);
 
-  //gpsSensor_ublox.setAutoHNRINScallback(&callbackHNRINS, maxWait);
-  gpsSensor_ublox.setAutoHNRINSrate(0, false, maxWait);
+  //gpsSensor_ublox.setAutoHNRINScallback(&callbackHNRINS, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoHNRINSrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logHNRINS(false);
 
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_DTM, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBS, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNS, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GRS, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_RLM, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_TXT, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_VLW, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C, maxWait);
-  gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_I2C, maxWait);
+  gpsSensor_ublox.newCfgValset(VAL_LAYER_RAM_BBR); // Use cfgValset to disable individual NMEA messages
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_DTM_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GBS_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GNS_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GRS_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GST_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RLM_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_INFMSG_UBX_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VLW_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_I2C, 0);
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_ZDA_I2C, 0);
+  gpsSensor_ublox.sendCfgValset(maxWait); // Send the configuration VALSET
+  
   gpsSensor_ublox.setNMEALoggingMask(0);
+
+  settings.enableTerminalOutput = prevTerminalOutput;
 }
 
 void enableMessages(uint16_t maxWait)
 {
-  gpsSensor_ublox.setAutoNAVPOSECEFcallback(&callbackNAVPOSECEF, maxWait);
+  Serial.println(F("Enabling GNSS messages. This will take a few seconds..."));
+
+  //Disable terminal output when configuring messages
+  bool prevTerminalOutput = settings.enableTerminalOutput;
+  settings.enableTerminalOutput = false;
+
+  gpsSensor_ublox.setAutoNAVPOSECEFcallbackPtr(&callbackNAVPOSECEF, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVPOSECEF(settings.sensor_uBlox.logUBXNAVPOSECEF > 0 ? true : false);
-  gpsSensor_ublox.setAutoNAVPOSECEFrate(settings.sensor_uBlox.logUBXNAVPOSECEF, false, maxWait);
+  gpsSensor_ublox.setAutoNAVPOSECEFrate(settings.sensor_uBlox.logUBXNAVPOSECEF, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoNAVSTATUScallback(&callbackNAVSTATUS, maxWait);
+  gpsSensor_ublox.setAutoNAVSTATUScallbackPtr(&callbackNAVSTATUS, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVSTATUS(settings.sensor_uBlox.logUBXNAVSTATUS > 0 ? true : false);
-  gpsSensor_ublox.setAutoNAVSTATUSrate(settings.sensor_uBlox.logUBXNAVSTATUS, false, maxWait);
+  gpsSensor_ublox.setAutoNAVSTATUSrate(settings.sensor_uBlox.logUBXNAVSTATUS, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoDOPcallback(&callbackNAVDOP, maxWait);
+  gpsSensor_ublox.setAutoDOPcallbackPtr(&callbackNAVDOP, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVDOP(settings.sensor_uBlox.logUBXNAVDOP > 0 ? true : false);
-  gpsSensor_ublox.setAutoDOPrate(settings.sensor_uBlox.logUBXNAVDOP, false, maxWait);
+  gpsSensor_ublox.setAutoDOPrate(settings.sensor_uBlox.logUBXNAVDOP, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoNAVATTcallback(&callbackNAVATT, maxWait);
+  gpsSensor_ublox.setAutoNAVATTcallbackPtr(&callbackNAVATT, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVATT(settings.sensor_uBlox.logUBXNAVATT > 0 ? true : false);
-  gpsSensor_ublox.setAutoNAVATTrate(settings.sensor_uBlox.logUBXNAVATT, false, maxWait);
+  gpsSensor_ublox.setAutoNAVATTrate(settings.sensor_uBlox.logUBXNAVATT, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoPVTcallback(&callbackNAVPVT, maxWait);
+  gpsSensor_ublox.setAutoPVTcallbackPtr(&callbackNAVPVT, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVPVT(settings.sensor_uBlox.logUBXNAVPVT > 0 ? true : false);
-  gpsSensor_ublox.setAutoPVTrate(settings.sensor_uBlox.logUBXNAVPVT, false, maxWait);
+  gpsSensor_ublox.setAutoPVTrate(settings.sensor_uBlox.logUBXNAVPVT, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoNAVODOcallback(&callbackNAVODO, maxWait);
+  gpsSensor_ublox.setAutoNAVODOcallbackPtr(&callbackNAVODO, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVODO(settings.sensor_uBlox.logUBXNAVODO > 0 ? true : false);
-  gpsSensor_ublox.setAutoNAVODOrate(settings.sensor_uBlox.logUBXNAVODO, false, maxWait);
+  gpsSensor_ublox.setAutoNAVODOrate(settings.sensor_uBlox.logUBXNAVODO, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoNAVVELECEFcallback(&callbackNAVVELECEF, maxWait);
+  gpsSensor_ublox.setAutoNAVVELECEFcallbackPtr(&callbackNAVVELECEF, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVVELECEF(settings.sensor_uBlox.logUBXNAVVELECEF > 0 ? true : false);
-  gpsSensor_ublox.setAutoNAVVELECEFrate(settings.sensor_uBlox.logUBXNAVVELECEF, false, maxWait);
+  gpsSensor_ublox.setAutoNAVVELECEFrate(settings.sensor_uBlox.logUBXNAVVELECEF, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoNAVVELNEDcallback(&callbackNAVVELNED, maxWait);
+  gpsSensor_ublox.setAutoNAVVELNEDcallbackPtr(&callbackNAVVELNED, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVVELNED(settings.sensor_uBlox.logUBXNAVVELNED > 0 ? true : false);
-  gpsSensor_ublox.setAutoNAVVELNEDrate(settings.sensor_uBlox.logUBXNAVVELNED, false, maxWait);
+  gpsSensor_ublox.setAutoNAVVELNEDrate(settings.sensor_uBlox.logUBXNAVVELNED, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoNAVHPPOSECEFcallback(&callbackNAVHPPOSECEF, maxWait);
+  gpsSensor_ublox.setAutoNAVHPPOSECEFcallbackPtr(&callbackNAVHPPOSECEF, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVHPPOSECEF(settings.sensor_uBlox.logUBXNAVHPPOSECEF > 0 ? true : false);
-  gpsSensor_ublox.setAutoNAVHPPOSECEFrate(settings.sensor_uBlox.logUBXNAVHPPOSECEF, false, maxWait);
+  gpsSensor_ublox.setAutoNAVHPPOSECEFrate(settings.sensor_uBlox.logUBXNAVHPPOSECEF, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoHPPOSLLHcallback(&callbackNAVHPPOSLLH, maxWait);
+  gpsSensor_ublox.setAutoHPPOSLLHcallbackPtr(&callbackNAVHPPOSLLH, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVHPPOSLLH(settings.sensor_uBlox.logUBXNAVHPPOSLLH > 0 ? true : false);
-  gpsSensor_ublox.setAutoHPPOSLLHrate(settings.sensor_uBlox.logUBXNAVHPPOSLLH, false, maxWait);
+  gpsSensor_ublox.setAutoHPPOSLLHrate(settings.sensor_uBlox.logUBXNAVHPPOSLLH, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoNAVCLOCKcallback(&callbackNAVCLOCK, maxWait);
+  gpsSensor_ublox.setAutoNAVCLOCKcallbackPtr(&callbackNAVCLOCK, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVCLOCK(settings.sensor_uBlox.logUBXNAVCLOCK > 0 ? true : false);
-  gpsSensor_ublox.setAutoNAVCLOCKrate(settings.sensor_uBlox.logUBXNAVCLOCK, false, maxWait);
+  gpsSensor_ublox.setAutoNAVCLOCKrate(settings.sensor_uBlox.logUBXNAVCLOCK, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoRELPOSNEDcallback(&callbackNAVRELPOSNED, maxWait);
+  gpsSensor_ublox.setAutoRELPOSNEDcallbackPtr(&callbackNAVRELPOSNED, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logNAVRELPOSNED(settings.sensor_uBlox.logUBXNAVRELPOSNED > 0 ? true : false);
-  gpsSensor_ublox.setAutoRELPOSNEDrate(settings.sensor_uBlox.logUBXNAVRELPOSNED, false, maxWait);
+  gpsSensor_ublox.setAutoRELPOSNEDrate(settings.sensor_uBlox.logUBXNAVRELPOSNED, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoRXMSFRBXcallback(&callbackRXMSFRBX, maxWait);
+  gpsSensor_ublox.setAutoRXMSFRBXcallbackPtr(&callbackRXMSFRBX, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logRXMSFRBX(settings.sensor_uBlox.logUBXRXMSFRBX > 0 ? true : false);
-  gpsSensor_ublox.setAutoRXMSFRBXrate(settings.sensor_uBlox.logUBXRXMSFRBX, false, maxWait);
+  gpsSensor_ublox.setAutoRXMSFRBXrate(settings.sensor_uBlox.logUBXRXMSFRBX, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.disableUBX7Fcheck(settings.sensor_uBlox.logUBXRXMRAWX > 0 ? true : false); // RAWX data can legitimately contain 0x7F, so we need to disable the "7F" check in checkUbloxI2C
-  gpsSensor_ublox.setAutoRXMRAWXcallback(&callbackRXMRAWX, maxWait);
+  gpsSensor_ublox.setAutoRXMRAWXcallbackPtr(&callbackRXMRAWX, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logRXMRAWX(settings.sensor_uBlox.logUBXRXMRAWX > 0 ? true : false);
-  gpsSensor_ublox.setAutoRXMRAWXrate(settings.sensor_uBlox.logUBXRXMRAWX, false, maxWait);
+  gpsSensor_ublox.setAutoRXMRAWXrate(settings.sensor_uBlox.logUBXRXMRAWX, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoTIMTM2callback(&callbackTIMTM2, maxWait);
+  gpsSensor_ublox.setAutoTIMTM2callbackPtr(&callbackTIMTM2, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logTIMTM2(settings.sensor_uBlox.logUBXTIMTM2 > 0 ? true : false);
-  gpsSensor_ublox.setAutoTIMTM2rate(settings.sensor_uBlox.logUBXTIMTM2, false, maxWait);
+  gpsSensor_ublox.setAutoTIMTM2rate(settings.sensor_uBlox.logUBXTIMTM2, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoESFALGcallback(&callbackESFALG, maxWait);
+  gpsSensor_ublox.setAutoESFALGcallbackPtr(&callbackESFALG, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFALG(settings.sensor_uBlox.logUBXESFALG > 0 ? true : false);
-  gpsSensor_ublox.setAutoESFALGrate(settings.sensor_uBlox.logUBXESFALG, false, maxWait);
+  gpsSensor_ublox.setAutoESFALGrate(settings.sensor_uBlox.logUBXESFALG, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoESFINScallback(&callbackESFINS, maxWait);
+  gpsSensor_ublox.setAutoESFINScallbackPtr(&callbackESFINS, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFINS(settings.sensor_uBlox.logUBXESFINS > 0 ? true : false);
-  gpsSensor_ublox.setAutoESFINSrate(settings.sensor_uBlox.logUBXESFINS, false, maxWait);
+  gpsSensor_ublox.setAutoESFINSrate(settings.sensor_uBlox.logUBXESFINS, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoESFMEAScallback(&callbackESFMEAS, maxWait);
+  gpsSensor_ublox.setAutoESFMEAScallbackPtr(&callbackESFMEAS, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFMEAS(settings.sensor_uBlox.logUBXESFMEAS > 0 ? true : false);
-  gpsSensor_ublox.setAutoESFMEASrate(settings.sensor_uBlox.logUBXESFMEAS, false, maxWait);
+  gpsSensor_ublox.setAutoESFMEASrate(settings.sensor_uBlox.logUBXESFMEAS, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoESFRAWcallback(&callbackESFRAW, maxWait);
+  gpsSensor_ublox.setAutoESFRAWcallbackPtr(&callbackESFRAW, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFRAW(settings.sensor_uBlox.logUBXESFRAW > 0 ? true : false);
-  gpsSensor_ublox.setAutoESFRAWrate(settings.sensor_uBlox.logUBXESFRAW, false, maxWait);
+  gpsSensor_ublox.setAutoESFRAWrate(settings.sensor_uBlox.logUBXESFRAW, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoESFSTATUScallback(&callbackESFSTATUS, maxWait);
+  gpsSensor_ublox.setAutoESFSTATUScallbackPtr(&callbackESFSTATUS, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logESFSTATUS(settings.sensor_uBlox.logUBXESFSTATUS > 0 ? true : false);
-  gpsSensor_ublox.setAutoESFSTATUSrate(settings.sensor_uBlox.logUBXESFSTATUS, false, maxWait);
+  gpsSensor_ublox.setAutoESFSTATUSrate(settings.sensor_uBlox.logUBXESFSTATUS, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoHNRPVTcallback(&callbackHNRPVT, maxWait);
+  gpsSensor_ublox.setAutoHNRPVTcallbackPtr(&callbackHNRPVT, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logHNRPVT(settings.sensor_uBlox.logUBXHNRPVT > 0 ? true : false);
-  gpsSensor_ublox.setAutoHNRPVTrate(settings.sensor_uBlox.logUBXHNRPVT, false, maxWait);
+  gpsSensor_ublox.setAutoHNRPVTrate(settings.sensor_uBlox.logUBXHNRPVT, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoHNRATTcallback(&callbackHNRATT, maxWait);
+  gpsSensor_ublox.setAutoHNRATTcallbackPtr(&callbackHNRATT, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logHNRATT(settings.sensor_uBlox.logUBXHNRATT > 0 ? true : false);
-  gpsSensor_ublox.setAutoHNRATTrate(settings.sensor_uBlox.logUBXHNRATT, false, maxWait);
+  gpsSensor_ublox.setAutoHNRATTrate(settings.sensor_uBlox.logUBXHNRATT, false, VAL_LAYER_RAM_BBR, maxWait);
 
-  gpsSensor_ublox.setAutoHNRINScallback(&callbackHNRINS, maxWait);
+  gpsSensor_ublox.setAutoHNRINScallbackPtr(&callbackHNRINS, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logHNRINS(settings.sensor_uBlox.logUBXHNRINS > 0 ? true : false);
-  gpsSensor_ublox.setAutoHNRINSrate(settings.sensor_uBlox.logUBXHNRINS, false, maxWait);
+  gpsSensor_ublox.setAutoHNRINSrate(settings.sensor_uBlox.logUBXHNRINS, false, VAL_LAYER_RAM_BBR, maxWait);
 
   uint32_t nmeaMessages = 0;
 
-  if (settings.sensor_uBlox.logNMEADTM > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_DTM;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_DTM, COM_PORT_I2C, settings.sensor_uBlox.logNMEADTM, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_DTM, COM_PORT_I2C, maxWait);
-  }
+  gpsSensor_ublox.newCfgValset(VAL_LAYER_RAM_BBR); // Use cfgValset to disable individual NMEA messages
 
-  if (settings.sensor_uBlox.logNMEAGBS > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBS;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GBS, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGBS, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GBS, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEADTM > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_DTM;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_DTM_I2C, settings.sensor_uBlox.logNMEADTM);
 
-  if (settings.sensor_uBlox.logNMEAGGA > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GGA;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGGA, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GGA, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAGBS > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBS;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GBS_I2C, settings.sensor_uBlox.logNMEAGBS);
 
-  if (settings.sensor_uBlox.logNMEAGLL > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GLL;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGLL, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GLL, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAGGA > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GGA;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, settings.sensor_uBlox.logNMEAGGA);
 
-  if (settings.sensor_uBlox.logNMEAGNS > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GNS;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GNS, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGNS, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GNS, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAGLL > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GLL;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_I2C, settings.sensor_uBlox.logNMEAGLL);
 
-  if (settings.sensor_uBlox.logNMEAGRS > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GRS;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GRS, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGRS, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GRS, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAGNS > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GNS;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GNS_I2C, settings.sensor_uBlox.logNMEAGNS);
 
-  if (settings.sensor_uBlox.logNMEAGSA > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GSA;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGSA, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSA, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAGRS > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GRS;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GRS_I2C, settings.sensor_uBlox.logNMEAGRS);
 
-  if (settings.sensor_uBlox.logNMEAGST > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GST;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGST, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GST, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAGSA > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GSA;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, settings.sensor_uBlox.logNMEAGSA);
 
-  if (settings.sensor_uBlox.logNMEAGSV > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GSV;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C, settings.sensor_uBlox.logNMEAGSV, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_GSV, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAGST > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GST;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GST_I2C, settings.sensor_uBlox.logNMEAGST);
 
-  if (settings.sensor_uBlox.logNMEARLM > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_RLM;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_RLM, COM_PORT_I2C, settings.sensor_uBlox.logNMEARLM, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_RLM, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAGSV > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GSV;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, settings.sensor_uBlox.logNMEAGSV);
 
-  if (settings.sensor_uBlox.logNMEARMC > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_RMC;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_RMC, COM_PORT_I2C, settings.sensor_uBlox.logNMEARMC, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_RMC, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEARLM > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_RLM;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RLM_I2C, settings.sensor_uBlox.logNMEARLM);
 
-  if (settings.sensor_uBlox.logNMEATXT > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_TXT;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_TXT, COM_PORT_I2C, settings.sensor_uBlox.logNMEATXT, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_TXT, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEARMC > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_RMC;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, settings.sensor_uBlox.logNMEARMC);
 
-  if (settings.sensor_uBlox.logNMEAVLW > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_VLW;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_VLW, COM_PORT_I2C, settings.sensor_uBlox.logNMEAVLW, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_VLW, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEATXT > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_TXT;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_INFMSG_UBX_I2C, settings.sensor_uBlox.logNMEATXT);
 
-  if (settings.sensor_uBlox.logNMEAVTG > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_VTG;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C, settings.sensor_uBlox.logNMEAVTG, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_VTG, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAVLW > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_VLW;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VLW_I2C, settings.sensor_uBlox.logNMEAVLW);
 
-  if (settings.sensor_uBlox.logNMEAZDA > 0)
-  {
-    nmeaMessages |= SFE_UBLOX_FILTER_NMEA_ZDA;
-    gpsSensor_ublox.enableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_I2C, settings.sensor_uBlox.logNMEAZDA, maxWait);
-  }
-  else
-  {
-    gpsSensor_ublox.disableNMEAMessage(UBX_NMEA_ZDA, COM_PORT_I2C, maxWait);
-  }
+  if (settings.sensor_uBlox.logNMEAVTG > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_VTG;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_I2C, settings.sensor_uBlox.logNMEAVTG);
+
+  if (settings.sensor_uBlox.logNMEAZDA > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_ZDA;
+  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_ZDA_I2C, settings.sensor_uBlox.logNMEAZDA);
+
+  gpsSensor_ublox.sendCfgValset();
 
   gpsSensor_ublox.setNMEALoggingMask(nmeaMessages);
+
+  settings.enableTerminalOutput = prevTerminalOutput;
 }
 
 boolean enableConstellations(uint16_t maxWait)
 {
   boolean success = true;
   
-  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGPS, SFE_UBLOX_GNSS_ID_GPS, maxWait);
-  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGLO, SFE_UBLOX_GNSS_ID_GLONASS, maxWait);
-  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGAL, SFE_UBLOX_GNSS_ID_GALILEO, maxWait);
-  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableBDS, SFE_UBLOX_GNSS_ID_BEIDOU, maxWait);
-  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableQZSS, SFE_UBLOX_GNSS_ID_QZSS, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGPS, SFE_UBLOX_GNSS_ID_GPS, VAL_LAYER_RAM_BBR, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGLO, SFE_UBLOX_GNSS_ID_GLONASS, VAL_LAYER_RAM_BBR, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableGAL, SFE_UBLOX_GNSS_ID_GALILEO, VAL_LAYER_RAM_BBR, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableBDS, SFE_UBLOX_GNSS_ID_BEIDOU, VAL_LAYER_RAM_BBR, maxWait);
+  success &= gpsSensor_ublox.enableGNSS(settings.sensor_uBlox.enableQZSS, SFE_UBLOX_GNSS_ID_QZSS, VAL_LAYER_RAM_BBR, maxWait);
   
   if (settings.printMinorDebugMessages)
   {

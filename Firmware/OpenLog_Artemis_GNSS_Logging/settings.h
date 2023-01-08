@@ -89,6 +89,9 @@ struct struct_settings {
   uint8_t hnrNavigationRate = 1; //HNR Navigation Rate (if supported)
   bool printGNSSDebugMessages = false;
   uint8_t qwiicBusPullUps = 0; // Qwiic bus pull-up resistance: 0, 1(.5), 6, 12, 24 kOhms
+  bool outputUBX = false; // Output the sensor UBX data on the TX pin
+  bool outputNMEA = false; // Output the sensor NMEA data on the TX pin
+  int  serialTXBaudRate = 115200;
   struct_uBlox sensor_uBlox;
 } settings;
 
