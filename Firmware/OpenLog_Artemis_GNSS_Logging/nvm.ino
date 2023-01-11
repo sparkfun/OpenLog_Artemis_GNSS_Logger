@@ -172,6 +172,9 @@ void recordSettingsToFile()
     settingsFile.print("hnrNavigationRate="); settingsFile.println(settings.hnrNavigationRate);
     settingsFile.print("printGNSSDebugMessages="); settingsFile.println(settings.printGNSSDebugMessages);
     settingsFile.print("qwiicBusPullUps="); settingsFile.println(settings.qwiicBusPullUps);
+    settingsFile.println("outputUBX=" + (String)settings.outputUBX);
+    settingsFile.println("outputNMEA=" + (String)settings.outputNMEA);
+    settingsFile.println("serialTXBaudRate=" + (String)settings.serialTXBaudRate);
 
     settingsFile.print("GNSS:log="); settingsFile.println(settings.sensor_uBlox.log);
     settingsFile.print("GNSS:powerManagement="); settingsFile.println(settings.sensor_uBlox.powerManagement);
@@ -399,7 +402,13 @@ bool parseLine(char* str) {
     settings.printGNSSDebugMessages = d;
   else if (strcmp(settingName, "qwiicBusPullUps") == 0)
     settings.qwiicBusPullUps = d;
-    
+  else if (strcmp(settingName, "outputUBX") == 0)
+    settings.outputUBX = d;
+  else if (strcmp(settingName, "outputNMEA") == 0)
+    settings.outputNMEA = d;
+  else if (strcmp(settingName, "serialTXBaudRate") == 0)
+    settings.serialTXBaudRate = d;
+
   else if (strcmp(settingName, "GNSS:log") == 0)
     settings.sensor_uBlox.log = d;
   else if (strcmp(settingName, "GNSS:powerManagement") == 0)
