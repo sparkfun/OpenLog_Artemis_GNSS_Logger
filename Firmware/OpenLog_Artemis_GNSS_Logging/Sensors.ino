@@ -427,21 +427,21 @@ void disableMessages(uint16_t maxWait)
   gpsSensor_ublox.logHNRINS(false);
 
   gpsSensor_ublox.newCfgValset(VAL_LAYER_RAM_BBR); // Use cfgValset to disable individual NMEA messages
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_DTM_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GBS_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GNS_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GRS_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GST_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RLM_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_INFMSG_UBX_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VLW_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_I2C, 0);
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_ZDA_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_DTM_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GBS_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GNS_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GRS_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RLM_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_INFMSG_UBX_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VLW_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_I2C, 0);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_ZDA_I2C, 0);
   gpsSensor_ublox.sendCfgValset(maxWait); // Send the configuration VALSET
   
   gpsSensor_ublox.setNMEALoggingMask(0);
@@ -554,49 +554,49 @@ void enableMessages(uint16_t maxWait)
   gpsSensor_ublox.newCfgValset(VAL_LAYER_RAM_BBR); // Use cfgValset to disable individual NMEA messages
 
   if (settings.sensor_uBlox.logNMEADTM > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_DTM;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_DTM_I2C, settings.sensor_uBlox.logNMEADTM);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_DTM_I2C, settings.sensor_uBlox.logNMEADTM);
 
   if (settings.sensor_uBlox.logNMEAGBS > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GBS;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GBS_I2C, settings.sensor_uBlox.logNMEAGBS);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GBS_I2C, settings.sensor_uBlox.logNMEAGBS);
 
   if (settings.sensor_uBlox.logNMEAGGA > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GGA;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, settings.sensor_uBlox.logNMEAGGA);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GGA_I2C, settings.sensor_uBlox.logNMEAGGA);
 
   if (settings.sensor_uBlox.logNMEAGLL > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GLL;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_I2C, settings.sensor_uBlox.logNMEAGLL);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GLL_I2C, settings.sensor_uBlox.logNMEAGLL);
 
   if (settings.sensor_uBlox.logNMEAGNS > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GNS;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GNS_I2C, settings.sensor_uBlox.logNMEAGNS);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GNS_I2C, settings.sensor_uBlox.logNMEAGNS);
 
   if (settings.sensor_uBlox.logNMEAGRS > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GRS;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GRS_I2C, settings.sensor_uBlox.logNMEAGRS);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GRS_I2C, settings.sensor_uBlox.logNMEAGRS);
 
   if (settings.sensor_uBlox.logNMEAGSA > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GSA;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, settings.sensor_uBlox.logNMEAGSA);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSA_I2C, settings.sensor_uBlox.logNMEAGSA);
 
   if (settings.sensor_uBlox.logNMEAGST > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GST;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GST_I2C, settings.sensor_uBlox.logNMEAGST);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GST_I2C, settings.sensor_uBlox.logNMEAGST);
 
   if (settings.sensor_uBlox.logNMEAGSV > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_GSV;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, settings.sensor_uBlox.logNMEAGSV);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_GSV_I2C, settings.sensor_uBlox.logNMEAGSV);
 
   if (settings.sensor_uBlox.logNMEARLM > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_RLM;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RLM_I2C, settings.sensor_uBlox.logNMEARLM);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RLM_I2C, settings.sensor_uBlox.logNMEARLM);
 
   if (settings.sensor_uBlox.logNMEARMC > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_RMC;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, settings.sensor_uBlox.logNMEARMC);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_RMC_I2C, settings.sensor_uBlox.logNMEARMC);
 
   if (settings.sensor_uBlox.logNMEATXT > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_TXT;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_INFMSG_UBX_I2C, settings.sensor_uBlox.logNMEATXT);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_INFMSG_UBX_I2C, settings.sensor_uBlox.logNMEATXT);
 
   if (settings.sensor_uBlox.logNMEAVLW > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_VLW;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VLW_I2C, settings.sensor_uBlox.logNMEAVLW);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VLW_I2C, settings.sensor_uBlox.logNMEAVLW);
 
   if (settings.sensor_uBlox.logNMEAVTG > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_VTG;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_I2C, settings.sensor_uBlox.logNMEAVTG);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_VTG_I2C, settings.sensor_uBlox.logNMEAVTG);
 
   if (settings.sensor_uBlox.logNMEAZDA > 0) nmeaMessages |= SFE_UBLOX_FILTER_NMEA_ZDA;
-  gpsSensor_ublox.addCfgValset8(UBLOX_CFG_MSGOUT_NMEA_ID_ZDA_I2C, settings.sensor_uBlox.logNMEAZDA);
+  gpsSensor_ublox.addCfgValset(UBLOX_CFG_MSGOUT_NMEA_ID_ZDA_I2C, settings.sensor_uBlox.logNMEAZDA);
 
   gpsSensor_ublox.sendCfgValset();
 

@@ -1,11 +1,12 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: September 9th, 2021
+  Date: January 11th, 2023
   Version: V3.0
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX and NMEA
-  messages from the u-blox series F9 and M10 GNSS receivers - using the Configuration Interface.
+  messages from the u-blox series F9 and M10 GNSS receivers - using the Configuration Interface
+  via v3 of the SparkFun u-blox GNSS library.
 
   This version uses v2.2.1 of the SparkFun Apollo3 (artemis) core.
   
@@ -59,7 +60,7 @@
   New in v3:
   
   The GNSS UBX and/or NMEA data can also be streamed to the TX pin.
-  Use the Logging Menu for 
+  Open the logging menu and see options 11-13 for more details. 
   
   Based extensively on:
   OpenLog Artemis
