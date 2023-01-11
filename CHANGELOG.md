@@ -1,6 +1,13 @@
 Change Log
 ======================
 
+* V3.0
+  * Updated to resolve Issue #28 - code now uses SparkFun u-blox GNSS library v3
+  * Note: v3 will only work on modules that use the Configuration Interface (F9 / M10)
+  * For M8 modules, please continue to use v2.2
+  * Also adds the NMEA and UBX output to TX pin option - requested in #26
+* V2.2 :
+  * Corrects the file sync issue reported in Issue #24
 * V2.1 :
   * settings.enableTerminalOutput is now updated and stored correctly after leaving the menus
   * Add GNSS settings to settings file

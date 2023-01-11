@@ -78,6 +78,17 @@ The menus will let you configure:
 
 New features are constantly being added so we’ve released an easy to use firmware upgrade tool. No need to install Arduino or a bunch of libraries, simply open the [Artemis Firmware Upload GUI](https://github.com/sparkfun/Artemis-Firmware-Upload-GUI), load the latest OLA firmware, and add features to OpenLog Artemis as they come out! Full instructions are available in [UPGRADE.md](./UPGRADE.md).
 
+Versions
+--------
+
+The latest version of this firmware (v3.0) was written for the latest u-blox modules (F9 and M10) which no longer support messages like UBX-CFG-PRT and UB-CFG-MSG.
+v3.0 uses the Configuration Interface (VALSET and VALGET) to configure the module. It is built around v3 of the SparkFun u-blox GNSS library.
+
+Please note: v3.0 is not backward compatible with v2.2. If you have an older M8 module, please continue to use v2.2. v3.0 will only work with newer modules
+(F9, M10) which support the Configuration Interface.
+
+Please see [CHANGELOG.md](./CHANGELOG.md) for details.
+
 Repository Contents
 -------------------
 
