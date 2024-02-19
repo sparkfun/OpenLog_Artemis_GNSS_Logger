@@ -1,0 +1,33 @@
+# Workflow that builds the firmware, andadds the binary to the ./Binaries folder, ready for release.
+name: build-for-release
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    branches: 
+
+jobs:
+  # Build the firmware
+  call-compile-firmware:
+    uses: ./.github/workflows/compile-firmware.yml
+
+  # Using the outputs of the build
+  deploy-build: 
+  
+    runs-on: ubuntu-latest
+    needs: [call-compile-firmware]
+
+    steps:
+      # Download the generated binary file for the release
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ needs.call-compile-firmware.outputs.binary-file }}
+
+      - run: mv ${{ needs.call-compile-firmware.outputs.binary-file }} ./Binaries/${{ needs.call-compile-firmware.outputs.binary-file }}
+
+      - uses: actions-js/push@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.BRANCH }}
+          message: 'Pushing new firmware binary'
