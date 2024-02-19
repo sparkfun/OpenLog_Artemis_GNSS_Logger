@@ -7,7 +7,10 @@ Which is handy if you want to quickly update the firmware in the field, or are n
 
 The firmware is customized for the different versions of the OLA hardware. You will find versions for the **X04 SparkX (Black) OLA** and **V10 SparkFun (Red) OLA** plus any subsequent revisions. The filename tells you which hardware the firmware is for and what version it is:
 
-* OpenLog_Artemis_GNSS_Logging-V10-v22.bin - is the _stable_ version for the **V10 SparkFun (Red) OLA**
+* OpenLog_Artemis_GNSS_Logging-V10-v30.bin - is the _stable_ version for the **V10 SparkFun (Red) OLA**
+  * Please note that v3.0 will only work with newer modules - F9 and M10 - which support the Configuration Interface
+  * For older M8 modules, please continue to use v2.2
+
 * OpenLog_Artemis_GNSS_Logging-X04-v22.bin - is the _stable_ version for the **X04 SparkX (Black) OLA**
 
 ## To use:
