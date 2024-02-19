@@ -25,11 +25,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
-      - name: Get firmware version
+      - name: Get firmware version 1
         run: |
           echo "firmwareMajor=$(grep -Po "(?<=FIRMWARE_VERSION_MAJOR = )([0-9])*(?=;$)" ./Firmware/${{ env.FILENAME_PREFIX }}/${{ env.FILENAME_PREFIX }}.ino)" >> "$GITHUB_ENV"
           echo "firmwareMinor=$(grep -Po "(?<=FIRMWARE_VERSION_MINOR = )([0-9])*(?=;$)" ./Firmware/${{ env.FILENAME_PREFIX }}/${{ env.FILENAME_PREFIX }}.ino)" >> "$GITHUB_ENV"
-          echo "firmwareMajorMinor=-V10-v${{ env.firmwareMajor }}${{ env.firmwareMinor }}" >> "$GITHUB_ENV"
+
+      - name: Get firmware version 2
+        run: echo "firmwareMajorMinor=-V10-v${{ env.firmwareMajor }}${{ env.firmwareMinor }}" >> "$GITHUB_ENV"
 
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
