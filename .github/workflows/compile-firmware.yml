@@ -26,11 +26,10 @@ jobs:
         uses: actions/checkout@master
 
       - name: Get firmware version
-        id: firmwareVersion
         run: |
           echo "firmwareMajor=$(grep -Po "(?<=FIRMWARE_VERSION_MAJOR = )([0-9])*(?=;$)" ./Firmware/${{ env.FILENAME_PREFIX }}/${{ env.FILENAME_PREFIX }}.ino)" >> "$GITHUB_ENV"
           echo "firmwareMinor=$(grep -Po "(?<=FIRMWARE_VERSION_MINOR = )([0-9])*(?=;$)" ./Firmware/${{ env.FILENAME_PREFIX }}/${{ env.FILENAME_PREFIX }}.ino)" >> "$GITHUB_ENV"
-          echo "firmwareMajorMinor=-V10-v${{ env.firmwareMajor }}${{ env.firmwareMinor }}" >> $GITHUB_OUTPUT
+          echo "firmwareMajorMinor=-V10-v${{ env.firmwareMajor }}${{ env.firmwareMinor }}" >> "$GITHUB_ENV"
 
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
@@ -67,13 +66,13 @@ jobs:
       - name: Rename binary
         run: |
           cd ./Firmware/${{ env.FILENAME_PREFIX }}/build/SparkFun.apollo3.sfe_artemis_atp/
-          mv ${{ env.FILENAME_PREFIX }}.ino.bin ${{ env.FILENAME_PREFIX }}${{ steps.firmwareVersion.outputs.firmwareMajorMinor }}.bin
-          echo "targetBinary=./Firmware/${{ env.FILENAME_PREFIX }}/build/SparkFun.apollo3.sfe_artemis_atp/${{ env.FILENAME_PREFIX }}${{ steps.firmwareVersion.outputs.firmwareMajorMinor }}.bin" >> "$GITHUB_ENV"
+          mv ${{ env.FILENAME_PREFIX }}.ino.bin ${{ env.FILENAME_PREFIX }}${{ env.firmwareMajorMinor }}.bin
+          echo "targetBinary=./Firmware/${{ env.FILENAME_PREFIX }}/build/SparkFun.apollo3.sfe_artemis_atp/${{ env.FILENAME_PREFIX }}${{ env.firmwareMajorMinor }}.bin" >> "$GITHUB_ENV"
 
       - name: Upload binary to action
         uses: actions/upload-artifact@v3
         with: 
-          name: ${{ env.FILENAME_PREFIX }}${{ steps.firmwareVersion.outputs.firmwareMajorMinor }}.bin
+          name: ${{ env.FILENAME_PREFIX }}${{ env.firmwareMajorMinor }}.bin
           path: ${{ env.targetBinary }}
 
       - name: Output binary
