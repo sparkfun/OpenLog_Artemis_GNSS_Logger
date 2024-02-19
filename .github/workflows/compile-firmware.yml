@@ -66,15 +66,16 @@ jobs:
 
       - name: Rename binary
         run: |
-          cd ./Firmware/${{ env.FILENAME_PREFIX }}
+          cd ./Firmware/${{ env.FILENAME_PREFIX }}/build/SparkFun.apollo3.sfe_artemis_atp/
           mv ${{ env.FILENAME_PREFIX }}.ino.bin ${{ env.FILENAME_PREFIX }}${{ steps.firmwareVersion.outputs.firmwareMajorMinor }}.bin
+          echo "targetBinary=./Firmware/${{ env.FILENAME_PREFIX }}/build/SparkFun.apollo3.sfe_artemis_atp/${{ env.FILENAME_PREFIX }}${{ steps.firmwareVersion.outputs.firmwareMajorMinor }}.bin" >> "$GITHUB_ENV"
 
       - name: Upload binary to action
         uses: actions/upload-artifact@v3
         with: 
           name: ${{ env.FILENAME_PREFIX }}${{ steps.firmwareVersion.outputs.firmwareMajorMinor }}.bin
-          path: ./Firmware/${{ env.FILENAME_PREFIX }}/${{ env.FILENAME_PREFIX }}${{ steps.firmwareVersion.outputs.firmwareMajorMinor }}.bin
+          path: ${{ env.targetBinary }}
 
       - name: Output binary
         id: output-binary
-        run: echo "filename=RTKUploader.linux.gz" >> $GITHUB_OUTPUT
+        run: echo "filename=${{ env.targetBinary }}" >> $GITHUB_OUTPUT
