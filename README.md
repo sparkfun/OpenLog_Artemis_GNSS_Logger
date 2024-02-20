@@ -40,6 +40,7 @@ The menus will let you configure:
   * UBX-NAV-TIMEUTC   (UTC Time Solution)
   * UBX-NAV-VELECEF   (Velocity Solution Earth-Centered Earth-Fixed)
   * UBX-NAV-VELNED    (Velocity Solution North/East/Down)
+  * UBX-RXM-MEASX     (Satellite measurements for RRLP)
   * UBX-RXM-SFRBX     (Broadcast Navigation Data Subframe)
   * UBX-TIM-TM2       (Time Mark Data)
 * If your module supports them, you can also log:

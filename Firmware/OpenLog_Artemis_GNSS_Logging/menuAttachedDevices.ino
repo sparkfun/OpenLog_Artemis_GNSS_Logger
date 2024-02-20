@@ -13,17 +13,7 @@ void menuConfigure_uBlox()
     else
     {
       //Print the module information
-      Serial.print(minfo.mod);
-      if (minfo.SPG) Serial.print(F(" SPG")); //Standard Precision
-      if (minfo.HPG) Serial.print(F(" HPG")); //High Precision (ZED-F9P)
-      if (minfo.ADR) Serial.print(F(" ADR")); //Dead Reckoning (ZED-F9K)
-      if (minfo.UDR) Serial.print(F(" UDR")); //Untethered Dead Reckoning
-      if (minfo.TIM) Serial.print(F(" TIM")); //Time sync (ZED-F9T)
-      if (minfo.FTS) Serial.print(F(" FTS")); //Frequency and time sync
-      if (minfo.LAP) Serial.print(F(" LAP")); //Lane accurate
-      if (minfo.HDG) Serial.print(F(" HDG")); //Heading (ZED-F9H)
-      if (minfo.HPS) Serial.print(F(" HPS")); //High Precision Sensor Fusion (ZED-F9R)
-      Serial.println();
+      Serial.println(gpsSensor_ublox.getModuleName());
 
       Serial.print(F("1) Sensor Logging                                         : "));
       if (settings.sensor_uBlox.log == true) Serial.println(F("Enabled"));
@@ -116,17 +106,7 @@ void menuConfigure_uBloxUBX()
     Serial.print(F("Menu: Configure UBX logging "));
 
     //Print the module information
-    Serial.print(minfo.mod);
-    if (minfo.SPG) Serial.print(F(" SPG")); //Standard Precision
-    if (minfo.HPG) Serial.print(F(" HPG")); //High Precision (ZED-F9P)
-    if (minfo.ADR) Serial.print(F(" ADR")); //Dead Reckoning (ZED-F9K)
-    if (minfo.UDR) Serial.print(F(" UDR")); //Untethered Dead Reckoning
-    if (minfo.TIM) Serial.print(F(" TIM")); //Time sync (ZED-F9T)
-    if (minfo.FTS) Serial.print(F(" FTS")); //Frequency and time sync
-    if (minfo.LAP) Serial.print(F(" LAP")); //Lane accurate
-    if (minfo.HDG) Serial.print(F(" HDG")); //Heading (ZED-F9H)
-    if (minfo.HPS) Serial.print(F(" HPS")); //High Precision Sensor Fusion (ZED-F9R)
-    Serial.println();
+    Serial.println(gpsSensor_ublox.getModuleName());
 
     Serial.print(F(" 1) Log rate for UBX-NAV-POSECEF   (Position Earth-Centered Earth-Fixed)                             : "));
     Serial.println (settings.sensor_uBlox.logUBXNAVPOSECEF);
@@ -197,6 +177,9 @@ void menuConfigure_uBloxUBX()
     Serial.print(F("23) Log rate for UBX-HNR-INS       (High Navigation Rate Vehicle Dynamics) (ADR / UDR Only)          : "));
     Serial.println(settings.sensor_uBlox.logUBXHNRINS);
 
+    Serial.print(F("24) Log rate for UBX-RXM-MEASX     (Satellite measurements for RRLP)                                 : "));
+    Serial.println(settings.sensor_uBlox.logUBXRXMMEASX);
+
     Serial.flush();
 
     Serial.println(F(" x) Exit"));
@@ -249,6 +232,8 @@ void menuConfigure_uBloxUBX()
       setLogRate(&settings.sensor_uBlox.logUBXHNRATT);
     else if (incoming == 23)
       setLogRate(&settings.sensor_uBlox.logUBXHNRINS);
+    else if (incoming == 24)
+      setLogRate(&settings.sensor_uBlox.logUBXRXMMEASX);
     else if (incoming == STATUS_PRESSED_X)
       break;
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
