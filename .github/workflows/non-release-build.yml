@@ -55,8 +55,10 @@ jobs:
           cp UnbufferedSerial.h /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/cores/mbed-os/drivers/UnbufferedSerial.h
           cp serial_api.c /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/cores/mbed-os/targets/TARGET_Ambiq_Micro/TARGET_Apollo3/device/serial_api.c
           cp libmbed-os.a /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/variants/SFE_ARTEMIS_ATP/mbed/libmbed-os.a
+          echo "$(cat /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/libraries/SPI/SPI.cpp)"
           cd /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/libraries/SPI
           patch -p1 ./Extras/spi.diff
+          echo "$(cat /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/libraries/SPI/SPI.cpp)"
 
       - name: Compile Sketch
         run: arduino-cli compile -v -e -b SparkFun:apollo3:sfe_artemis_atp ./Firmware/${{ env.FILENAME_PREFIX }}/${{ env.FILENAME_PREFIX }}.ino
