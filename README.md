@@ -25,6 +25,9 @@ The OpenLog Artemis automatically scans, detects, configures, and logs data from
 * [ZOE-M8Q](https://www.sparkfun.com/products/15193)
 * [SAM-M8Q](https://www.sparkfun.com/products/15210)
 * [NEO-M8U](https://www.sparkfun.com/products/16329)
+* [MAX-M10S](https://www.sparkfun.com/products/18037)
+* [SAM-M10Q](https://www.sparkfun.com/products/21834)
+* [NEO-F9P](https://www.sparkfun.com/products/23288)
 * More boards are being added all the time!
 
 The menus will let you configure:
