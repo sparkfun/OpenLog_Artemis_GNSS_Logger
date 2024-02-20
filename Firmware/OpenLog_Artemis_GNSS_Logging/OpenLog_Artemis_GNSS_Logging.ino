@@ -1,8 +1,8 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: January 11th, 2023
-  Version: V3.0
+  Date: February 20th, 2024
+  Version: V3.1
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX and NMEA
   messages from the u-blox series F9 and M10 GNSS receivers - using the Configuration Interface
@@ -75,7 +75,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 3;
-const int FIRMWARE_VERSION_MINOR = 0;
+const int FIRMWARE_VERSION_MINOR = 1;
 
 //Define the OLA board identifier:
 //  This is an int which is unique to this variant of the OLA and which allows us
@@ -85,7 +85,7 @@ const int FIRMWARE_VERSION_MINOR = 0;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x230 // This will appear as 560 (decimal) in OLA_GNSS_settings.cfg
+#define OLA_IDENTIFIER 0x231 // This will appear as 561 (decimal) in OLA_GNSS_settings.cfg
 
 #include "settings.h"
 
@@ -196,29 +196,6 @@ volatile static bool stopLoggingSeen = false; //Flag to indicate if we should st
 int lowBatteryReadings = 0; // Count how many times the battery voltage has read low
 const int lowBatteryReadingsLimit = 1000; // Don't declare the battery voltage low until we have had this many consecutive low readings (to reject sampling noise)
 bool ignorePowerLossInterrupt = true; // Ignore the power loss interrupt - when attaching the interrupt
-
-struct minfoStructure // Structure to hold the GNSS module info
-{
-  char swVersion[30];
-  char hwVersion[10];
-  int protVerMajor;
-  int protVerMinor;
-  char mod[8]; //The module type from the "MOD=" extension (7 chars + NULL)
-  bool SPG; //Standard Precision
-  bool HPG; //High Precision (ZED-F9P)
-  bool ADR; //Automotive Dead Reckoning (ZED-F9K)
-  bool UDR; //Untethered Dead Reckoning (NEO-M8U which does not support protocol 27)
-  bool TIM; //Time sync (ZED-F9T) (Guess!)
-  bool FTS; //Frequency and Time Sync
-  bool LAP; //Lane Accurate
-  bool HDG; //Heading (ZED-F9H)
-  bool HPS; //High Precision Sensor Fusion (ZED-F9R)
-} minfo; //Module info
-
-// Custom UBX Packet for getModuleInfo
-uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
-// The next line creates and initialises the packet information which wraps around the payload
-ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 

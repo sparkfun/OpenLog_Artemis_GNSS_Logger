@@ -35,6 +35,7 @@ struct struct_uBlox {
   uint8_t logUBXNAVRELPOSNED = 0;
   uint8_t logUBXRXMSFRBX = 0;
   uint8_t logUBXRXMRAWX = 0;
+  uint8_t logUBXRXMMEASX = 0;
   uint8_t logUBXTIMTM2 = 0;
   uint8_t logUBXESFMEAS = 0;
   uint8_t logUBXESFRAW = 0;

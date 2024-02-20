@@ -30,19 +30,19 @@ bool beginSensors()
     if (gpsSensor_ublox.begin(qwiic, settings.sensor_uBlox.ubloxI2Caddress) == true) //Wire port, Address. Default is 0x42.
     {
       // Try up to three times to get the module info
-      if (getModuleInfo(1100) == false) // Try to get the module info
+      if (gpsSensor_ublox.getModuleInfo(1100) == false) // Try to get the module info
       {
         if (settings.printMajorDebugMessages == true)
         {
           Serial.println(F("beginSensors: first getModuleInfo call failed. Trying again...")); 
         }       
-        if (getModuleInfo(1100) == false) // Try to get the module info
+        if (gpsSensor_ublox.getModuleInfo(1100) == false) // Try to get the module info
         {
           if (settings.printMajorDebugMessages == true)
           {
             Serial.println(F("beginSensors: second getModuleInfo call failed. Trying again...")); 
           }       
-          if (getModuleInfo(1100) == false) // Try to get the module info
+          if (gpsSensor_ublox.getModuleInfo(1100) == false) // Try to get the module info
           {
             if (settings.printMajorDebugMessages == true)
             {
@@ -58,29 +58,15 @@ bool beginSensors()
       if (settings.printMajorDebugMessages == true)
       {
         Serial.print(F("beginSensors: GNSS module found: PROTVER="));
-        Serial.print(minfo.protVerMajor);
+        Serial.print(gpsSensor_ublox.getProtocolVersionHigh());
         Serial.print(F("."));
-        Serial.print(minfo.protVerMinor);
-        Serial.print(F(" SPG=")); //Standard Precision
-        Serial.print(minfo.SPG);
-        Serial.print(F(" HPG=")); //High Precision (ZED-F9P)
-        Serial.print(minfo.HPG); // We can only enable RAWX on HPG and TIM modules
-        Serial.print(F(" ADR=")); //Dead Reckoning (ZED-F9K)
-        Serial.print(minfo.ADR);
-        Serial.print(F(" UDR=")); //Untethered Dead Reckoning (NEO-M8U)
-        Serial.print(minfo.UDR);
-        Serial.print(F(" TIM=")); //Time sync (ZED-F9T)
-        Serial.print(minfo.TIM); // We can only enable RAWX on HPG and TIM modules
-        Serial.print(F(" FTS=")); //Frequency and time sync
-        Serial.print(minfo.FTS); // Let's guess that we can enable RAWX on FTS modules
-        Serial.print(F(" LAP=")); //Lane accurate
-        Serial.print(minfo.LAP);
-        Serial.print(F(" HDG=")); //Heading (ZED-F9H)
-        Serial.print(minfo.HDG);
-        Serial.print(F(" HPS=")); //High Precision Sensor Fusion (ZED-F9R)
-        Serial.print(minfo.HPS);
-        Serial.print(F(" MOD=")); //Module type
-        Serial.println(minfo.mod);
+        Serial.print(gpsSensor_ublox.getProtocolVersionLow());
+        Serial.print(F(" FWVER="));
+        Serial.print(gpsSensor_ublox.getFirmwareVersionHigh());
+        Serial.print(F("."));
+        Serial.print(gpsSensor_ublox.getFirmwareVersionLow());
+        Serial.print(F(" MOD="));
+        Serial.println(gpsSensor_ublox.getModuleName());
       }
 
       //Disable all messages
@@ -88,12 +74,6 @@ bool beginSensors()
 
       //Check if any UBX messages are enabled
       bool ubxRequired = true; // UBX is always required for ACK/NACK
-      //bool ubxRequired = settings.sensor_uBlox.logUBXNAVPOSECEF | settings.sensor_uBlox.logUBXNAVSTATUS | settings.sensor_uBlox.logUBXNAVDOP | settings.sensor_uBlox.logUBXNAVATT
-      //  | settings.sensor_uBlox.logUBXNAVPVT | settings.sensor_uBlox.logUBXNAVODO | settings.sensor_uBlox.logUBXNAVVELECEF | settings.sensor_uBlox.logUBXNAVVELNED
-      //  | settings.sensor_uBlox.logUBXNAVHPPOSECEF | settings.sensor_uBlox.logUBXNAVHPPOSLLH | settings.sensor_uBlox.logUBXNAVCLOCK
-      //  | settings.sensor_uBlox.logUBXNAVRELPOSNED | settings.sensor_uBlox.logUBXRXMSFRBX | settings.sensor_uBlox.logUBXRXMRAWX | settings.sensor_uBlox.logUBXTIMTM2
-      //  | settings.sensor_uBlox.logUBXESFMEAS | settings.sensor_uBlox.logUBXESFRAW | settings.sensor_uBlox.logUBXESFSTATUS | settings.sensor_uBlox.logUBXESFALG
-      //  | settings.sensor_uBlox.logUBXESFINS | settings.sensor_uBlox.logUBXHNRPVT | settings.sensor_uBlox.logUBXHNRATT | settings.sensor_uBlox.logUBXHNRINS;
 
       //Check if any NMEA messaged are enabled
       bool nmeaRequired = settings.sensor_uBlox.logNMEADTM | settings.sensor_uBlox.logNMEAGBS
@@ -390,6 +370,10 @@ void disableMessages(uint16_t maxWait)
   gpsSensor_ublox.setAutoRXMRAWXrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logRXMRAWX(false);
 
+  //gpsSensor_ublox.setAutoRXMMEASXcallback(&callbackRXMMEASX, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.setAutoRXMMEASXrate(0, false, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.logRXMMEASX(false);
+
   //gpsSensor_ublox.setAutoTIMTM2callback(&callbackTIMTM2, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.setAutoTIMTM2rate(0, false, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logTIMTM2(false);
@@ -512,6 +496,10 @@ void enableMessages(uint16_t maxWait)
   gpsSensor_ublox.setAutoRXMRAWXcallbackPtr(&callbackRXMRAWX, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logRXMRAWX(settings.sensor_uBlox.logUBXRXMRAWX > 0 ? true : false);
   gpsSensor_ublox.setAutoRXMRAWXrate(settings.sensor_uBlox.logUBXRXMRAWX, false, VAL_LAYER_RAM_BBR, maxWait);
+
+  gpsSensor_ublox.setAutoRXMMEASXcallbackPtr(&callbackRXMMEASX, VAL_LAYER_RAM_BBR, maxWait);
+  gpsSensor_ublox.logRXMMEASX(settings.sensor_uBlox.logUBXRXMMEASX > 0 ? true : false);
+  gpsSensor_ublox.setAutoRXMMEASXrate(settings.sensor_uBlox.logUBXRXMMEASX, false, VAL_LAYER_RAM_BBR, maxWait);
 
   gpsSensor_ublox.setAutoTIMTM2callbackPtr(&callbackTIMTM2, VAL_LAYER_RAM_BBR, maxWait);
   gpsSensor_ublox.logTIMTM2(settings.sensor_uBlox.logUBXTIMTM2 > 0 ? true : false);

@@ -204,6 +204,18 @@ void callbackRXMRAWX(UBX_RXM_RAWX_data_t *ubxDataStruct)
   }
 }
 
+void callbackRXMMEASX(UBX_RXM_MEASX_data_t *ubxDataStruct)
+{
+  if (settings.enableTerminalOutput == true)
+  {
+    //Print some useful information. Let's keep this message short!
+    SerialPrintTimeString();
+
+    //Print the frame information
+    Serial.println(F(" RXM-MEASX"));
+  }
+}
+
 void callbackTIMTM2(UBX_TIM_TM2_data_t *ubxDataStruct)
 {
   if (settings.enableTerminalOutput == true)
