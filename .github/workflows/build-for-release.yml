@@ -59,11 +59,11 @@ jobs:
           cp serial_api.c /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/cores/mbed-os/targets/TARGET_Ambiq_Micro/TARGET_Apollo3/device/serial_api.c
           cp libmbed-os.a /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/variants/SFE_ARTEMIS_ATP/mbed/libmbed-os.a
           cp SPI.cpp /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/libraries/SPI/src/SPI.cpp
-          del *.h
-          del *.cpp
-          del *.a
-          del *.c
-          del *.odt
+          rm *.h
+          rm *.cpp
+          rm *.a
+          rm *.c
+          rm *.odt
 
       - name: Compile Sketch
         run: arduino-cli compile -v -e -b SparkFun:apollo3:sfe_artemis_atp ./Firmware/${{ env.FILENAME_PREFIX }}/${{ env.FILENAME_PREFIX }}.ino
@@ -73,9 +73,9 @@ jobs:
           cd ./Firmware/${{ env.FILENAME_PREFIX }}/build/SparkFun.apollo3.sfe_artemis_atp/
           mv ${{ env.FILENAME_PREFIX }}.ino.bin ${{ env.FILENAME_PREFIX }}${{ env.firmwareMajorMinor }}.bin
           echo "targetBinary=./Firmware/${{ env.FILENAME_PREFIX }}/build/SparkFun.apollo3.sfe_artemis_atp/${{ env.FILENAME_PREFIX }}${{ env.firmwareMajorMinor }}.bin" >> "$GITHUB_ENV"
-          del *.axf
-          del *.hex
-          del *.map
+          rm *.axf
+          rm *.hex
+          rm *.map
 
       - name: Move binary
         run: mv ${{ env.targetBinary }} ./Binaries
