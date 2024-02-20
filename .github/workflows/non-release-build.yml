@@ -57,7 +57,7 @@ jobs:
           cp libmbed-os.a /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/variants/SFE_ARTEMIS_ATP/mbed/libmbed-os.a
           echo "$(cat /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/libraries/SPI/src/SPI.cpp)"
           cd /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/libraries/SPI/src
-          patch -p1 ./Extras/spi.diff
+          patch SPI.cpp ./Extras/spi.diff
           echo "$(cat /home/runner/.arduino15/packages/SparkFun/hardware/apollo3/2.2.1/libraries/SPI/src/SPI.cpp)"
 
       - name: Compile Sketch
