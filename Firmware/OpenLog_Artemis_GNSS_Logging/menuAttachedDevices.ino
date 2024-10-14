@@ -13,9 +13,19 @@ void menuConfigure_uBlox()
     else
     {
       //Print the module information
-      Serial.println(gpsSensor_ublox.getModuleName());
+      Serial.print(minfo.mod);
+      if (minfo.SPG) Serial.print(F(" SPG")); //Standard Precision
+      if (minfo.HPG) Serial.print(F(" HPG")); //High Precision (ZED-F9P)
+      if (minfo.ADR) Serial.print(F(" ADR")); //Dead Reckoning (ZED-F9K)
+      if (minfo.UDR) Serial.print(F(" UDR")); //Untethered Dead Reckoning
+      if (minfo.TIM) Serial.print(F(" TIM")); //Time sync (ZED-F9T)
+      if (minfo.FTS) Serial.print(F(" FTS")); //Frequency and time sync
+      if (minfo.LAP) Serial.print(F(" LAP")); //Lane accurate
+      if (minfo.HDG) Serial.print(F(" HDG")); //Heading (ZED-F9H)
+      if (minfo.HPS) Serial.print(F(" HPS")); //High Precision Sensor Fusion (ZED-F9R)
+      Serial.println();
 
-      Serial.print(F(" 1) GNSS Logging                                           : "));
+      Serial.print(F(" 1) Sensor Logging                                         : "));
       if (settings.sensor_uBlox.log == true) Serial.println(F("Enabled"));
       else Serial.println(F("Disabled"));
 
@@ -45,13 +55,13 @@ void menuConfigure_uBlox()
         if (settings.sensor_uBlox.enableQZSS) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F(" 8) Disable NMEA on UART1 (helps at high message rates)    : "));
+        Serial.println(F(" 8) Configure UBX logging"));
+
+        Serial.println(F(" 9) Configure NMEA logging"));
+
+        Serial.print(F("10) Disable NMEA on UART1                                  : "));
         if (settings.sensor_uBlox.disableNMEAOnUART1) Serial.println(F("Yes"));
         else Serial.println(F("No"));
-
-        Serial.println(F(" 9) Configure UBX logging"));
-
-        Serial.println(F("10) Configure NMEA logging"));
 
         Serial.flush();
       }
@@ -79,11 +89,11 @@ void menuConfigure_uBlox()
       else if (incoming == 7)
         settings.sensor_uBlox.enableQZSS ^= 1;
       else if (incoming == 8)
-        settings.sensor_uBlox.disableNMEAOnUART1 ^= 1;
-      else if (incoming == 9)
         menuConfigure_uBloxUBX();
-      else if (incoming == 10)
+      else if (incoming == 9)
         menuConfigure_uBloxNMEA();
+      else if (incoming == 10)
+        settings.sensor_uBlox.disableNMEAOnUART1 ^= 1;
       else if (incoming == STATUS_PRESSED_X)
         break;
       else if (incoming == STATUS_GETNUMBER_TIMEOUT)
@@ -112,7 +122,17 @@ void menuConfigure_uBloxUBX()
     Serial.print(F("Menu: Configure UBX logging "));
 
     //Print the module information
-    Serial.println(gpsSensor_ublox.getModuleName());
+    Serial.print(minfo.mod);
+    if (minfo.SPG) Serial.print(F(" SPG")); //Standard Precision
+    if (minfo.HPG) Serial.print(F(" HPG")); //High Precision (ZED-F9P)
+    if (minfo.ADR) Serial.print(F(" ADR")); //Dead Reckoning (ZED-F9K)
+    if (minfo.UDR) Serial.print(F(" UDR")); //Untethered Dead Reckoning
+    if (minfo.TIM) Serial.print(F(" TIM")); //Time sync (ZED-F9T)
+    if (minfo.FTS) Serial.print(F(" FTS")); //Frequency and time sync
+    if (minfo.LAP) Serial.print(F(" LAP")); //Lane accurate
+    if (minfo.HDG) Serial.print(F(" HDG")); //Heading (ZED-F9H)
+    if (minfo.HPS) Serial.print(F(" HPS")); //High Precision Sensor Fusion (ZED-F9R)
+    Serial.println();
 
     Serial.print(F(" 1) Log rate for UBX-NAV-POSECEF   (Position Earth-Centered Earth-Fixed)                             : "));
     Serial.println (settings.sensor_uBlox.logUBXNAVPOSECEF);
@@ -183,9 +203,6 @@ void menuConfigure_uBloxUBX()
     Serial.print(F("23) Log rate for UBX-HNR-INS       (High Navigation Rate Vehicle Dynamics) (ADR / UDR Only)          : "));
     Serial.println(settings.sensor_uBlox.logUBXHNRINS);
 
-    Serial.print(F("24) Log rate for UBX-RXM-MEASX     (Satellite measurements for RRLP)                                 : "));
-    Serial.println(settings.sensor_uBlox.logUBXRXMMEASX);
-
     Serial.flush();
 
     Serial.println(F(" x) Exit"));
@@ -238,8 +255,6 @@ void menuConfigure_uBloxUBX()
       setLogRate(&settings.sensor_uBlox.logUBXHNRATT);
     else if (incoming == 23)
       setLogRate(&settings.sensor_uBlox.logUBXHNRINS);
-    else if (incoming == 24)
-      setLogRate(&settings.sensor_uBlox.logUBXRXMMEASX);
     else if (incoming == STATUS_PRESSED_X)
       break;
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)

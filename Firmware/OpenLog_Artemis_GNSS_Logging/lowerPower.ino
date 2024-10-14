@@ -378,8 +378,6 @@ void wakeFromSleep()
 
   Serial.begin(settings.serialTerminalBaudRate);
 
-  beginSerialOutput();
-
   beginQwiic(); //Power up Qwiic bus as early as possible
 
   SPI.begin(); //Needed if SD is disabled

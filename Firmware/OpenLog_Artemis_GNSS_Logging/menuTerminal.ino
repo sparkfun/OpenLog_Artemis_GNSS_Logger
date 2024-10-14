@@ -1,6 +1,5 @@
 void menuLogRate(bool *prevTerminalOutput)
 {
-  bool requestRestart = false;
   while (1)
   {
     Serial.println();
@@ -66,18 +65,6 @@ void menuLogRate(bool *prevTerminalOutput)
     if (settings.frequentFileAccessTimestamps == true) Serial.println(F("Enabled"));
     else Serial.println(F("Disabled"));
 
-    Serial.print(F("11) Output UBX data to TX pin                             : "));
-    if (settings.outputUBX == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("12) Output NMEA data to TX pin                            : "));
-    if (settings.outputNMEA == true) Serial.println(F("Enabled"));
-    else Serial.println(F("Disabled"));
-
-    Serial.print(F("13) TX pin baud rate                                      : "));
-    Serial.print(settings.serialTXBaudRate);
-    Serial.println(F(" bps"));
-
     Serial.println(F("x) Exit"));
 
     int incoming = getNumber(menuTimeout); //Timeout after x seconds
@@ -97,9 +84,8 @@ void menuLogRate(bool *prevTerminalOutput)
       else
       {
         settings.serialTerminalBaudRate = newBaud;
-        settings.enableTerminalOutput = *prevTerminalOutput;
         recordSettings();
-        Serial.printf("Terminal now set at %dbps. Please reset OpenLog Artemis and open a terminal at new baud rate. Freezing...\r\n", settings.serialTerminalBaudRate);
+        Serial.printf("Terminal now set at %dbps. Please reset device and open terminal at new baud rate. Freezing...\r\n", settings.serialTerminalBaudRate);
         while (1);
       }
     }
@@ -167,49 +153,10 @@ void menuLogRate(bool *prevTerminalOutput)
       settings.openNewLogFile ^= 1;
     else if (incoming == 10)
       settings.frequentFileAccessTimestamps ^= 1;
-    else if (incoming == 11)
-    {
-      settings.outputUBX ^= 1;
-      requestRestart = true;
-    }
-    else if (incoming == 12)
-    {
-      settings.outputNMEA ^= 1;
-      requestRestart = true;
-    }
-    else if (incoming == 13)
-    {
-      Serial.print(F("Enter baud rate (1200 to 460800): "));
-      int newBaud = getNumber(menuTimeout); //Timeout after x seconds
-      if (newBaud < 1200 || newBaud > 460800)
-      {
-        Serial.println(F("Error: baud rate out of range"));
-      }
-      else
-      {
-        settings.serialTXBaudRate = newBaud;
-        requestRestart = true;
-      }
-    }
     else if (incoming == STATUS_PRESSED_X)
-    {
-      if (requestRestart)
-      {
-        settings.enableTerminalOutput = *prevTerminalOutput;
-        recordSettings();
-        Serial.printf("Settings have been updated. Please reset OpenLog Artemis to use the new settings. Freezing...\r\n");
-        while (1);
-      }
       return;
-    }
     else if (incoming == STATUS_GETNUMBER_TIMEOUT)
-    {
-      if (requestRestart)
-      {
-        recordSettings();
-      }
       return;
-    }
     else
       printUnknown(incoming);
   }

@@ -172,9 +172,6 @@ void recordSettingsToFile()
     settingsFile.print("hnrNavigationRate="); settingsFile.println(settings.hnrNavigationRate);
     settingsFile.print("printGNSSDebugMessages="); settingsFile.println(settings.printGNSSDebugMessages);
     settingsFile.print("qwiicBusPullUps="); settingsFile.println(settings.qwiicBusPullUps);
-    settingsFile.println("outputUBX=" + (String)settings.outputUBX);
-    settingsFile.println("outputNMEA=" + (String)settings.outputNMEA);
-    settingsFile.println("serialTXBaudRate=" + (String)settings.serialTXBaudRate);
 
     settingsFile.print("GNSS:log="); settingsFile.println(settings.sensor_uBlox.log);
     settingsFile.print("GNSS:powerManagement="); settingsFile.println(settings.sensor_uBlox.powerManagement);
@@ -197,7 +194,6 @@ void recordSettingsToFile()
     settingsFile.print("GNSS:logUBXNAVRELPOSNED="); settingsFile.println(settings.sensor_uBlox.logUBXNAVRELPOSNED);
     settingsFile.print("GNSS:logUBXRXMSFRBX="); settingsFile.println(settings.sensor_uBlox.logUBXRXMSFRBX);
     settingsFile.print("GNSS:logUBXRXMRAWX="); settingsFile.println(settings.sensor_uBlox.logUBXRXMRAWX);
-    settingsFile.print("GNSS:logUBXRXMMEASX="); settingsFile.println(settings.sensor_uBlox.logUBXRXMMEASX);
     settingsFile.print("GNSS:logUBXTIMTM2="); settingsFile.println(settings.sensor_uBlox.logUBXTIMTM2);
     settingsFile.print("GNSS:logUBXESFMEAS="); settingsFile.println(settings.sensor_uBlox.logUBXESFMEAS);
     settingsFile.print("GNSS:logUBXESFRAW="); settingsFile.println(settings.sensor_uBlox.logUBXESFRAW);
@@ -404,13 +400,7 @@ bool parseLine(char* str) {
     settings.printGNSSDebugMessages = d;
   else if (strcmp(settingName, "qwiicBusPullUps") == 0)
     settings.qwiicBusPullUps = d;
-  else if (strcmp(settingName, "outputUBX") == 0)
-    settings.outputUBX = d;
-  else if (strcmp(settingName, "outputNMEA") == 0)
-    settings.outputNMEA = d;
-  else if (strcmp(settingName, "serialTXBaudRate") == 0)
-    settings.serialTXBaudRate = d;
-
+    
   else if (strcmp(settingName, "GNSS:log") == 0)
     settings.sensor_uBlox.log = d;
   else if (strcmp(settingName, "GNSS:powerManagement") == 0)
@@ -453,8 +443,6 @@ bool parseLine(char* str) {
     settings.sensor_uBlox.logUBXRXMSFRBX = d;
   else if (strcmp(settingName, "GNSS:logUBXRXMRAWX") == 0)
     settings.sensor_uBlox.logUBXRXMRAWX = d;
-  else if (strcmp(settingName, "GNSS:logUBXRXMMEASX") == 0)
-    settings.sensor_uBlox.logUBXRXMMEASX = d;
   else if (strcmp(settingName, "GNSS:logUBXTIMTM2") == 0)
     settings.sensor_uBlox.logUBXTIMTM2 = d;
   else if (strcmp(settingName, "GNSS:logUBXESFMEAS") == 0)

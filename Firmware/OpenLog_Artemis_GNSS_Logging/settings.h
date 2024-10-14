@@ -35,7 +35,6 @@ struct struct_uBlox {
   uint8_t logUBXNAVRELPOSNED = 0;
   uint8_t logUBXRXMSFRBX = 0;
   uint8_t logUBXRXMRAWX = 0;
-  uint8_t logUBXRXMMEASX = 0;
   uint8_t logUBXTIMTM2 = 0;
   uint8_t logUBXESFMEAS = 0;
   uint8_t logUBXESFRAW = 0;
@@ -61,7 +60,7 @@ struct struct_uBlox {
   uint8_t logNMEAVTG = 0;
   uint8_t logNMEAZDA = 0;
   uint8_t ubloxI2Caddress = ADR_UBLOX; //Let's store this just in case we want to change it at some point with CFG-I2C-ADDRESS (0x20510001)
-  bool disableNMEAOnUART1 = false; //Set to true to disable NMEA on UART1 (#34)
+  bool disableNMEAOnUART1 = false; //Set to true to disable NMEA on UART1
 };
 
 //This is all the settings that can be set on OpenLog. It's recorded to NVM and the config file.
@@ -91,9 +90,6 @@ struct struct_settings {
   uint8_t hnrNavigationRate = 1; //HNR Navigation Rate (if supported)
   bool printGNSSDebugMessages = false;
   uint8_t qwiicBusPullUps = 0; // Qwiic bus pull-up resistance: 0, 1(.5), 6, 12, 24 kOhms
-  bool outputUBX = false; // Output the sensor UBX data on the TX pin
-  bool outputNMEA = false; // Output the sensor NMEA data on the TX pin
-  int  serialTXBaudRate = 115200;
   struct_uBlox sensor_uBlox;
 } settings;
 

@@ -1,14 +1,17 @@
 /*
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
-  Date: February 20th, 2024
-  Version: V3.2
+  Date: September 9th, 2021
+  Version: V2.2
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX and NMEA
-  messages from the u-blox series F9 and M10 GNSS receivers - using the Configuration Interface
-  via v3 of the SparkFun u-blox GNSS library.
+  messages from the u-blox series 8, 9 and 10 GNSS receivers.
 
-  This version uses v2.2.1 of the SparkFun Apollo3 (artemis) core.
+  This version uses v2.1.0 of the SparkFun Apollo3 (artemis) core.
+  
+  Please note: v2.1.1 of the core contains a change to the I2C interface which makes communication
+  with u-blox modules over I2C less reliable. If you are building this code yourself,
+  please use V2.1.0 of the core.
   
   The Board should be set to SparkFun Apollo3 \ RedBoard Artemis ATP.
 
@@ -57,11 +60,6 @@
 
   Only UBX/NMEA data is logged to SD. ACKs and NACKs are automatically stripped out.
 
-  New in v3:
-  
-  The GNSS UBX and/or NMEA data can also be streamed to the TX pin.
-  Open the logging menu and see options 11-13 for more details. 
-  
   Based extensively on:
   OpenLog Artemis
   By: Nathan Seidle
@@ -74,7 +72,7 @@
 
 */
 
-const int FIRMWARE_VERSION_MAJOR = 3;
+const int FIRMWARE_VERSION_MAJOR = 2;
 const int FIRMWARE_VERSION_MINOR = 2;
 
 //Define the OLA board identifier:
@@ -85,7 +83,7 @@ const int FIRMWARE_VERSION_MINOR = 2;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x232 // This will appear as 562 (decimal) in OLA_GNSS_settings.cfg
+#define OLA_IDENTIFIER 0x222 // This will appear as 546 (decimal) in OLA_GNSS_settings.cfg
 
 #include "settings.h"
 
@@ -120,10 +118,6 @@ const byte PIN_QWIIC_SDA = 9;
 const byte PIN_SPI_SCK = 5;
 const byte PIN_SPI_CIPO = 6;
 const byte PIN_SPI_COPI = 7;
-const byte BREAKOUT_PIN_32 = 32;
-const byte BREAKOUT_PIN_TX = 12;
-const byte BREAKOUT_PIN_RX = 13;
-const byte BREAKOUT_PIN_11 = 11;
 
 enum returnStatus {
   STATUS_GETBYTE_TIMEOUT = 255,
@@ -146,7 +140,7 @@ TwoWire qwiic(PIN_QWIIC_SDA,PIN_QWIIC_SCL); //Will use pads 8/9
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 #include <SPI.h>
 
-#include <SdFat.h> //SdFat v2.2.0 by Bill Greiman: http://librarymanager/All#SdFat_exFAT
+#include <SdFat.h> //SdFat v2.0.7 by Bill Greiman: http://librarymanager/All#SdFat_exFAT
 
 #define SD_FAT_TYPE 3 // SD_FAT_TYPE = 0 for SdFat/File, 1 for FAT16/FAT32, 2 for exFAT, 3 for FAT16/FAT32 and exFAT.
 #define SD_CONFIG SdSpiConfig(PIN_MICROSD_CHIP_SELECT, SHARED_SPI, SD_SCK_MHZ(24)) // 24MHz
@@ -178,7 +172,7 @@ Apollo3RTC myRTC; //Create instance of RTC class
 #define MAX_PAYLOAD_SIZE 384 // Override MAX_PAYLOAD_SIZE for getModuleInfo which can return up to 348 bytes
 #define FILE_BUFFER_SIZE 32768
 
-#include "SparkFun_u-blox_GNSS_v3.h" //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS_v3
+#include "SparkFun_u-blox_GNSS_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_u-blox_GNSS
 SFE_UBLOX_GNSS gpsSensor_ublox;
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -196,6 +190,29 @@ volatile static bool stopLoggingSeen = false; //Flag to indicate if we should st
 int lowBatteryReadings = 0; // Count how many times the battery voltage has read low
 const int lowBatteryReadingsLimit = 1000; // Don't declare the battery voltage low until we have had this many consecutive low readings (to reject sampling noise)
 bool ignorePowerLossInterrupt = true; // Ignore the power loss interrupt - when attaching the interrupt
+
+struct minfoStructure // Structure to hold the GNSS module info
+{
+  char swVersion[30];
+  char hwVersion[10];
+  int protVerMajor;
+  int protVerMinor;
+  char mod[8]; //The module type from the "MOD=" extension (7 chars + NULL)
+  bool SPG; //Standard Precision
+  bool HPG; //High Precision (ZED-F9P)
+  bool ADR; //Automotive Dead Reckoning (ZED-F9K)
+  bool UDR; //Untethered Dead Reckoning (NEO-M8U which does not support protocol 27)
+  bool TIM; //Time sync (ZED-F9T) (Guess!)
+  bool FTS; //Frequency and Time Sync
+  bool LAP; //Lane Accurate
+  bool HDG; //Heading (ZED-F9H)
+  bool HPS; //High Precision Sensor Fusion (ZED-F9R)
+} minfo; //Module info
+
+// Custom UBX Packet for getModuleInfo and powerManagementTask
+uint8_t customPayload[MAX_PAYLOAD_SIZE]; // This array holds the payload data bytes
+// The next line creates and initialises the packet information which wraps around the payload
+ubxPacket customCfg = {0, 0, 0, 0, 0, customPayload, 0, 0, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED, SFE_UBLOX_PACKET_VALIDITY_NOT_DEFINED};
 
 //-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -240,8 +257,6 @@ void setup() {
   Serial.begin(settings.serialTerminalBaudRate);
   Serial.printf("Artemis OpenLog GNSS v%d.%d\r\n", FIRMWARE_VERSION_MAJOR, FIRMWARE_VERSION_MINOR);
   Serial.flush();
-
-  beginSerialOutput(); // If required, output data on the TX pin. Do this after loadSettings and before beginQwiic
 
   if (settings.useGPIO32ForStopLogging == true)
   {
@@ -442,17 +457,6 @@ void disableIMU()
   imuPowerOff();
 }
 
-void configureSerial1TxRx(void) // Configure pins 12 and 13 for UART1 TX and RX
-{
-  am_hal_gpio_pincfg_t pinConfigTx = g_AM_BSP_GPIO_COM_UART_TX;
-  pinConfigTx.uFuncSel = AM_HAL_PIN_12_UART1TX;
-  pin_config(PinName(BREAKOUT_PIN_TX), pinConfigTx);
-  am_hal_gpio_pincfg_t pinConfigRx = g_AM_BSP_GPIO_COM_UART_RX;
-  pinConfigRx.uFuncSel = AM_HAL_PIN_13_UART1RX;
-  pinConfigRx.ePullup = AM_HAL_GPIO_PIN_PULLUP_WEAK; // Put a weak pull-up on the Rx pin
-  pin_config(PinName(BREAKOUT_PIN_RX), pinConfigRx);
-}
-
 void beginDataLogging()
 {
   if (online.microSD == true && settings.logData == true)
@@ -478,17 +482,6 @@ void beginDataLogging()
   else
     online.dataLogging = false;
 
-}
-
-void beginSerialOutput()
-{
-  if ((settings.outputUBX == true) || (settings.outputNMEA == true))
-  {
-    //We need to manually restore the Serial1 TX and RX pins
-    configureSerial1TxRx();
-
-    Serial1.begin(settings.serialTXBaudRate); // (Re)start the serial port
-  }
 }
 
 #if SD_FAT_TYPE == 1
