@@ -2,7 +2,7 @@
   OpenLog Artemis GNSS Logging
   By: Paul Clark (PaulZC)
   Date: February 20th, 2024
-  Version: V3.1
+  Version: V3.2
 
   This firmware runs on the OpenLog Artemis and is dedicated to logging UBX and NMEA
   messages from the u-blox series F9 and M10 GNSS receivers - using the Configuration Interface
@@ -75,7 +75,7 @@
 */
 
 const int FIRMWARE_VERSION_MAJOR = 3;
-const int FIRMWARE_VERSION_MINOR = 1;
+const int FIRMWARE_VERSION_MINOR = 2;
 
 //Define the OLA board identifier:
 //  This is an int which is unique to this variant of the OLA and which allows us
@@ -85,7 +85,7 @@ const int FIRMWARE_VERSION_MINOR = 1;
 //    the variant * 0x100 (OLA = 1; GNSS_LOGGER = 2; GEOPHONE_LOGGER = 3)
 //    the major firmware version * 0x10
 //    the minor firmware version
-#define OLA_IDENTIFIER 0x231 // This will appear as 561 (decimal) in OLA_GNSS_settings.cfg
+#define OLA_IDENTIFIER 0x232 // This will appear as 562 (decimal) in OLA_GNSS_settings.cfg
 
 #include "settings.h"
 

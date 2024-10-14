@@ -93,8 +93,20 @@ bool beginSensors()
       {
         if (settings.printMajorDebugMessages == true)
           {
-            Serial.println(F("beginSensors: setPortOutput failed!")); 
+            Serial.println(F("beginSensors: setI2COutput failed!")); 
           }       
+      }
+
+      //Disable NMEA on UART1 if desired
+      if (settings.sensor_uBlox.disableNMEAOnUART1)
+      {
+        if (!gpsSensor_ublox.setUART1Output(COM_TYPE_UBX))
+        {
+          if (settings.printMajorDebugMessages == true)
+            {
+              Serial.println(F("beginSensors: setUART1Output failed!")); 
+            }       
+        }
       }
 
       //Save the port configuration - causes the IO system to reset!

@@ -223,6 +223,7 @@ void recordSettingsToFile()
     settingsFile.print("GNSS:logNMEAVTG="); settingsFile.println(settings.sensor_uBlox.logNMEAVTG);
     settingsFile.print("GNSS:logNMEAZDA="); settingsFile.println(settings.sensor_uBlox.logNMEAZDA);
     settingsFile.print("GNSS:ubloxI2Caddress="); settingsFile.println(settings.sensor_uBlox.ubloxI2Caddress);
+    settingsFile.print("GNSS:disableNMEAOnUART1="); settingsFile.println(settings.sensor_uBlox.disableNMEAOnUART1);
 
     updateDataFileAccess(&settingsFile); // Update the file access time & date
     settingsFile.close();
@@ -504,6 +505,8 @@ bool parseLine(char* str) {
     settings.sensor_uBlox.logNMEAZDA = d;
   else if (strcmp(settingName, "GNSS:ubloxI2Caddress") == 0)
     settings.sensor_uBlox.ubloxI2Caddress = d;
+  else if (strcmp(settingName, "GNSS:disableNMEAOnUART1") == 0)
+    settings.sensor_uBlox.disableNMEAOnUART1 = d;
 
   else
   {

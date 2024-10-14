@@ -61,6 +61,7 @@ struct struct_uBlox {
   uint8_t logNMEAVTG = 0;
   uint8_t logNMEAZDA = 0;
   uint8_t ubloxI2Caddress = ADR_UBLOX; //Let's store this just in case we want to change it at some point with CFG-I2C-ADDRESS (0x20510001)
+  bool disableNMEAOnUART1 = false; //Set to true to disable NMEA on UART1 (#34)
 };
 
 //This is all the settings that can be set on OpenLog. It's recorded to NVM and the config file.

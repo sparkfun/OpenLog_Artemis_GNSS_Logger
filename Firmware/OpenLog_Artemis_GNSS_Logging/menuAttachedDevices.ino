@@ -15,39 +15,43 @@ void menuConfigure_uBlox()
       //Print the module information
       Serial.println(gpsSensor_ublox.getModuleName());
 
-      Serial.print(F("1) Sensor Logging                                         : "));
+      Serial.print(F(" 1) GNSS Logging                                           : "));
       if (settings.sensor_uBlox.log == true) Serial.println(F("Enabled"));
       else Serial.println(F("Disabled"));
 
       if (settings.sensor_uBlox.log == true)
       {
-        Serial.print(F("2) Use a power management task to put the module to sleep : "));
+        Serial.print(F(" 2) Use a power management task to put the module to sleep : "));
         if (settings.sensor_uBlox.powerManagement == true) Serial.println(F("Yes"));
         else Serial.println(F("No"));
 
-        Serial.print(F("3) Enable GPS constellation                               : "));
+        Serial.print(F(" 3) Enable GPS constellation                               : "));
         if (settings.sensor_uBlox.enableGPS) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("4) Enable GLONASS constellation                           : "));
+        Serial.print(F(" 4) Enable GLONASS constellation                           : "));
         if (settings.sensor_uBlox.enableGLO) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("5) Enable Galileo constellation                           : "));
+        Serial.print(F(" 5) Enable Galileo constellation                           : "));
         if (settings.sensor_uBlox.enableGAL) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("6) Enable Beidou constellation                            : "));
+        Serial.print(F(" 6) Enable Beidou constellation                            : "));
         if (settings.sensor_uBlox.enableBDS) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.print(F("7) Enable QZSS                                            : "));
+        Serial.print(F(" 7) Enable QZSS                                            : "));
         if (settings.sensor_uBlox.enableQZSS) Serial.println(F("Enabled"));
         else Serial.println(F("Disabled"));
 
-        Serial.println(F("8) Configure UBX logging"));
+        Serial.print(F(" 8) Disable NMEA on UART1 (helps at high message rates)    : "));
+        if (settings.sensor_uBlox.disableNMEAOnUART1) Serial.println(F("Yes"));
+        else Serial.println(F("No"));
 
-        Serial.println(F("9) Configure NMEA logging"));
+        Serial.println(F(" 9) Configure UBX logging"));
+
+        Serial.println(F("10) Configure NMEA logging"));
 
         Serial.flush();
       }
@@ -75,8 +79,10 @@ void menuConfigure_uBlox()
       else if (incoming == 7)
         settings.sensor_uBlox.enableQZSS ^= 1;
       else if (incoming == 8)
-        menuConfigure_uBloxUBX();
+        settings.sensor_uBlox.disableNMEAOnUART1 ^= 1;
       else if (incoming == 9)
+        menuConfigure_uBloxUBX();
+      else if (incoming == 10)
         menuConfigure_uBloxNMEA();
       else if (incoming == STATUS_PRESSED_X)
         break;
